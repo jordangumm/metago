@@ -10,6 +10,19 @@ from subprocess import call
 class Runner(WorkflowRunner):
     def __init__(self, run_dp, num_cpu):
         self.run_dp = run_dp
+        
+        depends_dp = '/nfs/turbo/lsa-duhaimem/devel/gumm/workflows/omics_viral/dependencies'
+        miniconda_dp = os.path.join(depends_dp, 'miniconda/bin')
+
+        self.bbduk = os.path.join(miniconda_dp, 'bbduk.sh')
+        self.megahit = os.path.join(miniconda_dp, 'megahit')
+        self.prodigal = os.path.join(depends_dp, 'miniconda/pkgs/prodigal-2.6.3-0/bin/prodigal')
+
+        self.virsorter_data = os.path.join(depends_dp, 'virsorter-data')
+        self.virsorter = os.path.join(miniconda_dp, 'wrapper_phage_contigs_sorter_iPlant.pl')
+
+        self.prokka = os.path.join(depends_dp, 'miniconda/pkgs/prokka-1.12-4/prokka')
+
 
     def workflow(self):
         """ method invoked on class instance run call """
