@@ -21,7 +21,7 @@ rm miniconda.sh
 source ./dependencies/miniconda/bin/activate
 
 # add bioconda and r channel for easy dependency installations
-conda install -c bioconda bbmap megahit prodigal prokka 
+conda install -c bioconda bbmap megahit prodigal prokka emirge
 
 # install pyflow for automated task management
 wget https://github.com/Illumina/pyflow/releases/download/v1.1.17/pyflow-1.1.17.tar.gz
@@ -40,3 +40,7 @@ mv VirSorter dependencies/
 cd dependencies/VirSorter/Scripts && make && cd ../../
 ln -s dependencies/VirSorter/wrapper_phage_contigs_sorter_iPlant.pl dependencies/miniconda/bin
 ln -s dependencies/VirSorter/Scripts dependencies/miniconda/bin
+
+# install VirHostMatcher
+git clone https://github.com/jessieren/VirHostMatcher.git
+mv VirHostMatcher dependencies/
