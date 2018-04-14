@@ -20,6 +20,8 @@ rm miniconda.sh
 # activate conda virtual environment
 source ./dependencies/miniconda/bin/activate
 
+pip install click
+
 # add bioconda and r channel for easy dependency installations
 conda install -c bioconda bbmap megahit prodigal prokka emirge
 
@@ -44,3 +46,6 @@ ln -s dependencies/VirSorter/Scripts dependencies/miniconda/bin
 # install VirHostMatcher
 git clone https://github.com/jessieren/VirHostMatcher.git
 mv VirHostMatcher dependencies/
+
+# download adapters for trimming
+wget https://raw.githubusercontent.com/BioInfoTools/BBMap/master/resources/adapters.fa -O dependencies/adapters.fa
