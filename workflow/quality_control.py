@@ -83,16 +83,32 @@ class SampleQualityControl(FluxWorkflowRunner):
                     pair_tasks.append("trim_{}".format(pair))
 
                 # Step 3. Normalize to even coverage for assembly
-                normalized_fp = os.path.join(sample_output_dp, 'normalized', '{}.fastq'.format(pair))
-                if not os.path.exists(normalized_fp):
-                    cmd = 'source {} && bbnorm.sh t=4'.format(conda)
-                    cmd += ' in={} out={} target=100 min=5'.format(trimmed_fp, normalized_fp)
-                    self.addTask("normalize_{}".format(pair), nCores=4, memMb=pair_size*2, command=cmd, dependencies=pair_tasks)
-                    pair_tasks.append("normalize_{}".format(pair))
+                #normalized_fp = os.path.join(sample_output_dp, 'normalized', '{}.fastq'.format(pair))
+                #if not os.path.exists(normalized_fp):
+                #    cmd = 'source {} && bbnorm.sh t=4'.format(conda)
+                #    cmd += ' in={} out={} target=100 min=5'.format(trimmed_fp, normalized_fp)
+                #    self.addTask("normalize_{}".format(pair), nCores=4, memMb=pair_size*4, command=cmd, dependencies=pair_tasks)
+                #    pair_tasks.append("normalize_{}".format(pair))
                 
                 scheduled_tasks += pair_tasks
         else:
             sys.exit('Not Implemented: single paired QC')
+
+        sid = pair.split('_')[0]
+        merged_fp = os.path.join(sample_output_dp, '{}.fastq'.format(sid))
+        if not os.path.exists(merged_fp):
+            cmd = 'source {} && cat {}/* > {}'.format(conda, os.path.dirname(os.path.abspath(trimmed_fp)), merged_fp)
+            self.addTask("join_{}".format(pair), nCores=1, memMb=2000, command=cmd, dependencies=scheduled_tasks)
+            scheduled_tasks.append("join_{}".format(pair))
+
+        normalized_fp = os.path.join(sample_output_dp, 'normalized', '{}.fastq'.format(sid))
+        if not os.path.exists(normalized_fp):
+            cmd = 'source {} && bbnorm.sh t=4'.format(conda)
+            cmd += ' in={} out={} target=100 min=5'.format(merged_fp, normalized_fp)
+            fastq_size = (os.path.getsize(merged_fp) >> 20) * 4 # in MB adjusted for bbnorm requirements
+            num_cores = self.max_mem / fastq_size # take up cores based on ratio of memory to consume
+            self.addTask("normalize_{}".format(pair), nCores=num_cores, memMb=fastq_size, command=cmd, dependencies=pair_tasks)
+            scheduled_tasks.append("normalize_{}".format(pair))
 
 
 class RunQualityControl(FluxWorkflowRunner):
