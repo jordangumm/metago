@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os, sys
 import click
 
@@ -49,18 +51,21 @@ def runner(run_dp, output, flux, dispatch, account, ppn, mem, walltime):
 
     if flux:
         if not account: sys.exit('To attempt a submission to the flux cluster you need to supply an --account/-a')
-        if dispatch:
-            full_dp = os.path.dirname(os.path.abspath(__file__))
-            activate = 'source {}'.format(os.path.join(full_dp, 'dependencies', 'miniconda', 'bin', 'activate'))
-            runner_fp = os.path.join(full_dp, 'runner.py')
-            qsub = 'qsub -N pyflux_handler -A {} -q fluxm -l nodes=1:ppn=1,mem=2000mb,walltime={}'.format(account, walltime)
-            call('echo "{} && python {} {} -o {} -a {} -p {} -m {} -w {} --flux --no-dispatch" | {}'.format(activate, runner_fp,
-                                                                   run_dp, output, account, ppn, mem, walltime, qsub), shell=True)
-        else:
-            workflow_runner.run(mode='flux', dataDirRoot=log_output_dp, nCores=ppn, memMb=mem,
-                                schedulerArgList=['-N', 'viral_runner',
-                                                  '-A', account,
-                                                  '-l', 'nodes=1:ppn={},mem={}mb,walltime={}'.format(ppn, mem, walltime)])
+        #if dispatch:
+        full_dp = os.path.dirname(os.path.abspath(__file__))
+        activate = 'source {}'.format(os.path.join(full_dp, 'dependencies', 'miniconda', 'bin', 'activate'))
+        runner_fp = os.path.join(full_dp, 'runner.py')
+        qsub = 'qsub -N pyflux_handler -A {} -q fluxm -l nodes=1:ppn={},mem={}mb,walltime={}'.format(
+                                                                   account, ppn, mem, walltime)
+        call('echo "{} && python {} {} -o {} -a {} -p {} -m {} -w {}" | {}'.format(
+                                                                   activate, runner_fp,
+                                                                   run_dp, output, account,
+                                                                   ppn, mem, walltime, qsub), shell=True)
+       # else:
+       #     workflow_runner.run(mode='flux', dataDirRoot=log_output_dp, nCores=ppn, memMb=mem,
+       #                         schedulerArgList=['-N', 'viral_runner',
+       #                                           '-A', account,
+       #                                           '-l', 'nodes=1:ppn={},mem={}mb,walltime={}'.format(ppn, mem, walltime)])
     else:
         workflow_runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ppn, memMb=mem)
 

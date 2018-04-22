@@ -10,7 +10,7 @@
 
 
 # install miniconda for local independent package management
-wget http://repo.continuum.io/miniconda/Miniconda2-4.3.21-Linux-x86_64.sh -O miniconda.sh
+wget https://repo.continuum.io/archive/Anaconda2-4.3.1-Linux-x86.sh -O miniconda.sh
 mkdir dependencies
 chmod 775 miniconda.sh
 chmod 775 dependencies
@@ -24,18 +24,19 @@ pip install click
 
 # add bioconda and r channel for easy dependency installations
 conda install -c bioconda bbmap megahit prodigal prokka emirge
+conda install -c conda-forge conda-execute
 
 # install pyflow for automated task management
-wget https://github.com/Illumina/pyflow/releases/download/v1.1.17/pyflow-1.1.17.tar.gz
-pip install pyflow-1.1.17.tar.gz
-rm pyflow-1.1.17.tar.gz
+pip install https://github.com/Illumina/pyflow/releases/download/v1.1.17/pyflow-1.1.17.tar.gz
 
 # Virsorter Install https://github.com/simroux/VirSorter
 wget https://zenodo.org/record/1168727/files/virsorter-data-v2.tar.gz
 tar -xvzf virsorter-data-v2.tar.gz -C dependencies/
+rm virsorter-data-v2.tar.gz
 
 wget http://metagene.nig.ac.jp/metagene/mga_x86_64.tar.gz
-tar -xvzf metagene/mga_x86_64.tar.gz -C dependencies/
+tar -xvzf mga_x86_64.tar.gz -C dependencies/
+rm mga_x86_64.tar.gz
 
 git clone https://github.com/simroux/VirSorter.git
 mv VirSorter dependencies/

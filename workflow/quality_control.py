@@ -17,8 +17,8 @@ class SampleQualityControl(FluxWorkflowRunner):
         self.fastqs = fastqs
         self.output_dp = output_dp
 
-        self.max_ppn = max_ppn
-        self.max_mem = max_mem
+        self.max_ppn = int(max_ppn)
+        self.max_mem = int(max_mem)
 
     def get_fastq_pairs(self, fastqs):
         """ Return lists of fastq pairs
@@ -50,11 +50,6 @@ class SampleQualityControl(FluxWorkflowRunner):
         adapters = os.path.join(fp, '../dependencies/adapters.fa')
         sample_output_dp = os.path.join(self.output_dp, self.sid)
         if not os.path.exists(sample_output_dp): os.makedirs(sample_output_dp)
-        mem_available = self.getMemMb()
-        if mem_available == 'unlimited':
-            mem_available = self.max_mem
-        else:
-            mem_available = int(mem_available)
 
         scheduled_tasks = []
         if is_paired:
@@ -63,8 +58,8 @@ class SampleQualityControl(FluxWorkflowRunner):
 
                 pair_size = (os.path.getsize(pairs[pair]['r1']) >> 20) * 2 # in MB, both pairs
                 print '\n\n\n{}\n\n\n'.format(pair_size)
-                if pair_size > mem_available:
-                    sys.exit('{}MB is not enough memory to interleave {}MB pair'.format(mem_available, pair_size))
+                if pair_size > self.max_mem:
+                    sys.exit('{}MB is not enough memory to interleave {}MB pair'.format(self.max_mem, pair_size))
 
                 # Step 1. Interleave files to set up for next steps
                 interleaved_fp = os.path.join(sample_output_dp, 'interleaved', '{}.fastq'.format(pair))
@@ -82,14 +77,6 @@ class SampleQualityControl(FluxWorkflowRunner):
                     self.addTask("trim_{}".format(pair), nCores=1, memMb=pair_size, command=cmd, dependencies=pair_tasks) 
                     pair_tasks.append("trim_{}".format(pair))
 
-                # Step 3. Normalize to even coverage for assembly
-                #normalized_fp = os.path.join(sample_output_dp, 'normalized', '{}.fastq'.format(pair))
-                #if not os.path.exists(normalized_fp):
-                #    cmd = 'source {} && bbnorm.sh t=4'.format(conda)
-                #    cmd += ' in={} out={} target=100 min=5'.format(trimmed_fp, normalized_fp)
-                #    self.addTask("normalize_{}".format(pair), nCores=4, memMb=pair_size*4, command=cmd, dependencies=pair_tasks)
-                #    pair_tasks.append("normalize_{}".format(pair))
-                
                 scheduled_tasks += pair_tasks
         else:
             sys.exit('Not Implemented: single paired QC')
@@ -103,11 +90,9 @@ class SampleQualityControl(FluxWorkflowRunner):
 
         normalized_fp = os.path.join(sample_output_dp, 'normalized', '{}.fastq'.format(sid))
         if not os.path.exists(normalized_fp):
-            cmd = 'source {} && bbnorm.sh t=4'.format(conda)
+            cmd = 'source {} && bbnorm.sh -Xmx{}m t={}'.format(conda, self.max_mem-2000, self.max_ppn-1)
             cmd += ' in={} out={} target=100 min=5'.format(merged_fp, normalized_fp)
-            fastq_size = (os.path.getsize(merged_fp) >> 20) * 4 # in MB adjusted for bbnorm requirements
-            num_cores = self.max_mem / fastq_size # take up cores based on ratio of memory to consume
-            self.addTask("normalize_{}".format(pair), nCores=num_cores, memMb=fastq_size, command=cmd, dependencies=pair_tasks)
+            self.addTask("normalize_{}".format(pair), nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=pair_tasks)
             scheduled_tasks.append("normalize_{}".format(pair))
 
 
@@ -131,7 +116,6 @@ class RunQualityControl(FluxWorkflowRunner):
             sample_qc_runner = SampleQualityControl(sid=sample, fastqs=sample_fastqs, output_dp=self.output_dp,
                                                                      max_ppn=self.max_ppn, max_mem=self.max_mem)
             self.addWorkflowTask(label=sample, workflowRunnerInstance=sample_qc_runner)
-            break
 
 
 @click.command()
