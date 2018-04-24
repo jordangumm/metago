@@ -60,6 +60,7 @@ class SampleQualityControl(FluxWorkflowRunner):
                 print '\n\n\n{}\n\n\n'.format(pair_size)
                 if pair_size > self.max_mem:
                     sys.exit('{}MB is not enough memory to interleave {}MB pair'.format(self.max_mem, pair_size))
+                if pair_size == 0: continue # bad sample
 
                 # Step 1. Interleave files to set up for next steps
                 interleaved_fp = os.path.join(sample_output_dp, 'interleaved', '{}.fastq'.format(pair))
@@ -87,13 +88,6 @@ class SampleQualityControl(FluxWorkflowRunner):
             cmd = 'source {} && cat {}/* > {}'.format(conda, os.path.dirname(os.path.abspath(trimmed_fp)), merged_fp)
             self.addTask("join_{}".format(pair), nCores=1, memMb=2000, command=cmd, dependencies=scheduled_tasks)
             scheduled_tasks.append("join_{}".format(pair))
-
-        normalized_fp = os.path.join(sample_output_dp, 'normalized', '{}.fastq'.format(sid))
-        if not os.path.exists(normalized_fp):
-            cmd = 'source {} && bbnorm.sh -Xmx{}m t={}'.format(conda, self.max_mem-2000, self.max_ppn-1)
-            cmd += ' in={} out={} target=100 min=5'.format(merged_fp, normalized_fp)
-            self.addTask("normalize_{}".format(pair), nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=pair_tasks)
-            scheduled_tasks.append("normalize_{}".format(pair))
 
 
 class RunQualityControl(FluxWorkflowRunner):
@@ -131,7 +125,8 @@ def runner(run_dp, output_dp, ppn, mem):
     Arguments:
     run_dp -- String path to run directory to use for analysis
     """
-    log_output_dp = os.path.join(output_dp, 'logs', 'quality_control')
+    if not os.path.exists(output_dp): os.makedirs(output_dp)
+    log_output_dp = os.path.join(output_dp, 'logs')
 
     workflow_runner = RunQualityControl(run_dp=run_dp, output_dp=output_dp, max_ppn=ppn, max_mem=mem)
     workflow_runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ppn, memMb=mem)

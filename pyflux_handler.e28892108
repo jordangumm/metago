@@ -1,0 +1,26 @@
+[2018-04-24T02:38:26.253287] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] Initiating pyFlow run
+[2018-04-24T02:38:26.337861] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] pyFlowClientWorkflowClass: Runner
+[2018-04-24T02:38:26.373434] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] pyFlowVersion: 1.1.17
+[2018-04-24T02:38:26.406964] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] pythonVersion: 2.7.13.final.0
+[2018-04-24T02:38:26.566475] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] WorkingDir: '/home/gumm'
+[2018-04-24T02:38:26.595776] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] ProcessCmdLine: '/nfs/turbo/lsa-duhaimem/devel/gumm/workflows/omics_viral/runner.py /scratch/duhaimem_fluxm/gumm/habs_metag-metav/metaG/original -o /scratch/duhaimem_fluxm/gumm/habs_metag-metav/metaG -a duhaimem_fluxm -p 20 -m 500000 -w 24:00:00'
+[2018-04-24T02:38:26.633550] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] [RunParameters] mode: local
+[2018-04-24T02:38:26.688190] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] [RunParameters] nCores: 20
+[2018-04-24T02:38:26.721502] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] [RunParameters] memMb: 500000
+[2018-04-24T02:38:26.755287] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] [RunParameters] dataDir: /scratch/duhaimem_fluxm/gumm/habs_metag-metav/metaG/logs/runner/pyflow.data
+[2018-04-24T02:38:26.788583] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] [RunParameters] isDryRun: False
+[2018-04-24T02:38:26.822243] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] [RunParameters] isContinue: False
+[2018-04-24T02:38:26.862287] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] [RunParameters] isForceContinue: False
+[2018-04-24T02:38:26.895942] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] [RunParameters] mailTo: ''
+[2018-04-24T02:38:26.938576] [nyx7015.arc-ts.umich.edu] [45293_1] [TaskRunner:masterWorkflow] Starting task specification for master workflow
+[2018-04-24T02:38:26.972262] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] Adding command task 'qc' to master workflow
+[2018-04-24T02:38:27.013414] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] Adding command task 'assembly' to master workflow
+[2018-04-24T02:38:27.052497] [nyx7015.arc-ts.umich.edu] [45293_1] [TaskManager] Launching command task: 'qc' from master workflow
+[2018-04-24T02:38:27.094269] [nyx7015.arc-ts.umich.edu] [45293_1] [TaskRunner:masterWorkflow] Finished task specification for master workflow
+[2018-04-24T02:38:27.138078] [nyx7015.arc-ts.umich.edu] [45293_1] [TaskRunner:qc] Task initiated on local node
+[2018-04-24T02:38:30.762678] [nyx7015.arc-ts.umich.edu] [45293_1] [TaskManager] Completed command task: 'qc' launched from master workflow
+[2018-04-24T02:38:30.839939] [nyx7015.arc-ts.umich.edu] [45293_1] [TaskManager] Launching command task: 'assembly' from master workflow
+[2018-04-24T02:38:30.894303] [nyx7015.arc-ts.umich.edu] [45293_1] [TaskRunner:assembly] Task initiated on local node
+[2018-04-24T02:38:35.950510] [nyx7015.arc-ts.umich.edu] [45293_1] [TaskManager] Completed command task: 'assembly' launched from master workflow
+[2018-04-24T02:38:37.655888] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] Workflow successfully completed all tasks
+[2018-04-24T02:38:37.713996] [nyx7015.arc-ts.umich.edu] [45293_1] [WorkflowRunner] Elapsed time for full workflow: 11 sec

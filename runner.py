@@ -17,13 +17,20 @@ class Runner(FluxWorkflowRunner):
 
     def workflow(self):
         """ method invoked on class instance run call """
-        #qc_runner = RunQualityControl(run_dp=self.run_dp, output_dp=self.output_dp, max_ppn=self.max_ppn, max_mem=self.max_mem)
         fp = os.path.dirname(os.path.abspath(__file__))
         conda = os.path.join(fp, 'dependencies/miniconda/bin/activate')
+
         qc_runner = os.path.join(fp, 'workflow/quality_control.py')
+        qc_output_dp = os.path.join(self.output_dp, '01_QC')
         self.addTask("qc", nCores=self.max_ppn, memMb=self.max_mem,
                      command='source {} && python {} -r {} -o {} -p {} -m {}'.format(conda,
-                                qc_runner, self.run_dp, self.output_dp, self.max_ppn, self.max_mem))
+                          qc_runner, self.run_dp, qc_output_dp, self.max_ppn, self.max_mem))
+
+        assembly_runner = os.path.join(fp, 'workflow/assembly.py')
+        assembly_output_dp = os.path.join(self.output_dp, '02_ASSEMBLY')
+        self.addTask("assembly", nCores=self.max_ppn, memMb=self.max_mem,
+                     command='source {} && python {} -r {} -o {} -p {} -m {}'.format(conda,
+                         assembly_runner, qc_output_dp, assembly_output_dp, self.max_ppn, self.max_mem))
         
         #self.addWorkflowTask(label="qc", workflowRunnerInstance=qc_runner)
 
