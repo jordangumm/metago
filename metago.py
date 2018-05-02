@@ -46,9 +46,17 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
      
     if flux:
         if not account: sys.exit('To attempt a submission to the flux cluster you need to supply an --account/-a')
-        cmd = ' '.join(sys.argv)
         full_dp = os.path.dirname(os.path.abspath(__file__))
-        runner_fp = os.path.join(full_dp, 'metaGO.py')
+        metago_fp = os.path.join(full_dp, 'metago.py')
+        metago_index = -1
+        for i, s in enumerate(sys.argv):
+            if 'metago.py' in s:
+                metago_index = i
+                break
+        cmd = sys.argv
+        cmd[metago_index] = metago_fp
+        cmd.remove('--flux')
+        cmd = ' '.join(cmd)
         qsub = 'qsub -N metaGO -A {} -q fluxm -l nodes=1:ppn={},mem={}mb,walltime={}'.format(
                                                                    account, ppn, mem, walltime)
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
