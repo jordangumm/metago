@@ -1,6 +1,6 @@
-# Virus Omics Analysis Workflow
+# metaGenOmics Analysis Workflow CLI
 
-A workflow that aims to automate common viral metagenome pipeline steps.  This includes read quality control, assembly, gene calling, and other basic analysis routines.
+A CLI that aims to automate common metagenome pipeline steps.  This includes read quality control, assembly, gene calling, and other basic analysis routines.
 
 # Workflow Overview
 
