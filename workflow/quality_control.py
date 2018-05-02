@@ -37,6 +37,15 @@ class SampleQualityControl(FluxWorkflowRunner):
                 else: # not paired
                     print("NOT PAIRED: {}".format(fastq))
                     return fastqs, False
+            if '_1.fa' in fastq:
+                pair_name = '_'.join(fastq.split('/')[-1].split('_1.fa')).replace('stq','').replace('.gz','')
+                pairs[pair_name] = {}
+                if fastq.replace('_1.fa', '_2.fa') in fastqs:
+                    pairs[pair_name]['r1'] = fastq
+                    pairs[pair_name]['r2'] = fastq.replace('_1.fa', '_2.fa')
+                else: # not paired
+                    print("NOT PAIRED: {}".format(fastq))
+                    return fastqs, False
         return pairs, True
 
     def workflow(self):
@@ -45,6 +54,7 @@ class SampleQualityControl(FluxWorkflowRunner):
         To consider: integrating memory estimation to dynamically set requirements
         """
         pairs, is_paired = self.get_fastq_pairs(self.fastqs) # put in workflow instead of __init__ so print statements log
+        if len(pairs) == 0: sys.exit("No pairs found")
         fp = os.path.dirname(os.path.abspath(__file__))
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
         adapters = os.path.join(fp, '../dependencies/adapters.fa')
@@ -77,13 +87,12 @@ class SampleQualityControl(FluxWorkflowRunner):
                     cmd += ' ktrim=r k=23 mink=11 hdist=1 tpe tbo t=1 qtrim=rl trimq=20 maq=20 interleaved=t'
                     self.addTask("trim_{}".format(pair), nCores=1, memMb=pair_size, command=cmd, dependencies=pair_tasks) 
                     pair_tasks.append("trim_{}".format(pair))
-
                 scheduled_tasks += pair_tasks
-        else:
-            sys.exit('Not Implemented: single paired QC')
 
-        sid = pair.split('_')[0]
-        merged_fp = os.path.join(sample_output_dp, '{}.fastq'.format(sid))
+        else:
+            sys.exit('Not Implemented: single end QC')
+
+        merged_fp = os.path.join(sample_output_dp, '{}.fastq'.format(self.sid))
         if not os.path.exists(merged_fp):
             cmd = 'source {} && cat {}/* > {}'.format(conda, os.path.dirname(os.path.abspath(trimmed_fp)), merged_fp)
             self.addTask("join_{}".format(pair), nCores=1, memMb=2000, command=cmd, dependencies=scheduled_tasks)
@@ -104,33 +113,66 @@ class RunQualityControl(FluxWorkflowRunner):
             if not os.path.isdir(sample_dp) or not 'Sample_' in sample: continue
             sample_fastqs = []
             for fastq in os.listdir(sample_dp):
-                if 'fastq' not in fastq: continue
+                if '.fastq' not in fastq and not '.fa' in fastq: continue
                 fastq_fp = os.path.join(sample_dp, fastq)
                 sample_fastqs.append(fastq_fp)
+
             sample_qc_runner = SampleQualityControl(sid=sample, fastqs=sample_fastqs, output_dp=self.output_dp,
                                                                      max_ppn=self.max_ppn, max_mem=self.max_mem)
             self.addWorkflowTask(label=sample, workflowRunnerInstance=sample_qc_runner)
 
 
-@click.command()
-@click.option('--run_dp', '-r', required=True)
-@click.option('--output_dp', '-o', required=True)
+@click.group()
+@click.option('--output', '-o', required=True)
 @click.option('--ppn', '-p', required=True)
 @click.option('--mem', '-m', required=True)
-def runner(run_dp, output_dp, ppn, mem):
-    """ Analysis Workflow Management
+@click.pass_context
+def cli(ctx, output, ppn, mem):
+    if not os.path.exists(output): os.makedirs(output)
+    ctx.obj['OUTPUT'] = output
+    ctx.obj['PPN'] = ppn
+    ctx.obj['MEM'] = mem
 
-    Sets up Pyflow WorkflowRunner and launches locally by default or via flux
 
-    Arguments:
-    run_dp -- String path to run directory to use for analysis
-    """
-    if not os.path.exists(output_dp): os.makedirs(output_dp)
-    log_output_dp = os.path.join(output_dp, 'logs')
+@cli.command()
+@click.argument('run_dp')
+@click.pass_context
+def run_qc(ctx, run_dp):
+    r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/run_qc_{}'.format(r))
+    runner = RunQualityControl(run_dp=run_dp,
+                               output_dp=ctx.obj['OUTPUT'],
+                               max_ppn=ctx.obj['PPN'],
+                               max_mem=ctx.obj['MEM'])
+    return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
+    if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
+    return return_code
 
-    workflow_runner = RunQualityControl(run_dp=run_dp, output_dp=output_dp, max_ppn=ppn, max_mem=mem)
-    workflow_runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ppn, memMb=mem)
+
+@cli.command()
+@click.argument('sample_dp')
+@click.pass_context
+def sample_qc(ctx, sample_dp):
+    sid = sample_dp.split('/')[-1]
+    r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    log_output = os.path.join(ctx.obj['OUTPUT'], sid, 'qc_{}'.format(r))
+
+    sample_fastqs = []
+    for fastq in os.listdir(sample_dp):
+        if '.fastq' not in fastq and '.fa' not in fastq: continue
+        fastq_fp = os.path.join(sample_dp, fastq)
+        sample_fastqs.append(fastq_fp) 
+    if len(sample_fastqs) == 0: sys.exit('No fastq files in {}'.format(sample_dp))
+
+    runner = SampleQualityControl(sid=sid,
+                                  fastqs=sample_fastqs,
+                                  output_dp=ctx.obj['OUTPUT'],
+                                  max_ppn=ctx.obj['PPN'],
+                                  max_mem=ctx.obj['MEM'])
+    return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
+    if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
+    return return_code
 
 
 if __name__ == "__main__":
-    runner()
+    cli(obj={})
