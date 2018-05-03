@@ -38,7 +38,7 @@ class SampleQualityControl(FluxWorkflowRunner):
                     print("NOT PAIRED: {}".format(fastq))
                     return fastqs, False
             if '_1.fa' in fastq:
-                pair_name = '_'.join(fastq.split('/')[-1].split('_1.fa')).replace('stq','').replace('.gz','')
+                pair_name = '_'.join(fastq.split('/')[-1].split('_1.fa')).replace('stq','').replace('.gz','').replace('_','')
                 pairs[pair_name] = {}
                 if fastq.replace('_1.fa', '_2.fa') in fastqs:
                     pairs[pair_name]['r1'] = fastq
@@ -67,7 +67,6 @@ class SampleQualityControl(FluxWorkflowRunner):
                 pair_tasks = []
 
                 pair_size = (os.path.getsize(pairs[pair]['r1']) >> 20) * 2 # in MB, both pairs
-                print '\n\n\n{}\n\n\n'.format(pair_size)
                 if pair_size > self.max_mem:
                     sys.exit('{}MB is not enough memory to interleave {}MB pair'.format(self.max_mem, pair_size))
                 if pair_size == 0: continue # bad sample
@@ -77,15 +76,15 @@ class SampleQualityControl(FluxWorkflowRunner):
                 if not os.path.exists(interleaved_fp):
                     cmd = 'source {} && reformat.sh t=4'.format(conda)
                     cmd += ' in1={} in2={} out={}'.format(pairs[pair]['r1'], pairs[pair]['r2'], interleaved_fp)
-                    self.addTask("interleave_{}".format(pair), nCores=4, memMb=pair_size, command=cmd)
+                    self.addTask("interleave_{}".format(pair), nCores=4, memMb=pair_size*2, command=cmd)
                     pair_tasks.append("interleave_{}".format(pair))
 
                 # Step 2. Quality control by trimming adapters and low quality bases for mapping
                 trimmed_fp = os.path.join(sample_output_dp, 'quality_controlled', '{}.fastq'.format(pair))
                 if not os.path.exists(trimmed_fp):
                     cmd = 'source {} && bbduk.sh in={} out={} ref={}'.format(conda, interleaved_fp, trimmed_fp, adapters)
-                    cmd += ' ktrim=r k=23 mink=11 hdist=1 tpe tbo t=1 qtrim=rl trimq=20 maq=20 interleaved=t'
-                    self.addTask("trim_{}".format(pair), nCores=1, memMb=pair_size, command=cmd, dependencies=pair_tasks) 
+                    cmd += ' ktrim=r k=23 mink=11 hdist=1 tpe tbo t=4 qtrim=rl trimq=20 maq=20 interleaved=t'
+                    self.addTask("trim_{}".format(pair), nCores=4, memMb=pair_size*2, command=cmd, dependencies=pair_tasks) 
                     pair_tasks.append("trim_{}".format(pair))
                 scheduled_tasks += pair_tasks
 

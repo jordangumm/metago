@@ -42,7 +42,6 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
     if not os.path.exists(output): os.makedirs(output)
     fp = os.path.dirname(os.path.abspath(__file__))
     environment = os.path.join(fp, 'dependencies/miniconda/bin/activate')
-    qc_script = os.path.join(fp, 'workflow/quality_control.py')
      
     if flux:
         if not account: sys.exit('To attempt a submission to the flux cluster you need to supply an --account/-a')
@@ -62,7 +61,8 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
         sys.exit('Launched command via Flux')
     ctx.obj['ENVIRONMENT'] = environment
-    ctx.obj['QCSCRIPT'] = qc_script
+    ctx.obj['QCSCRIPT'] = os.path.join(fp, 'workflow/quality_control.py')
+    ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'workflow/read_pileup.py')
     ctx.obj['OUTPUT'] = output
     ctx.obj['FLUX'] = flux
     ctx.obj['ACCOUNT'] = account
@@ -93,6 +93,22 @@ def run_qc(ctx, run_dp):
     click.echo('Run QC called')
     cmd = 'source {} && python {} -o {} -p {} -m {} run_qc {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['QCSCRIPT'],
+                                                                      ctx.obj['OUTPUT'],
+                                                                      ctx.obj['PPN'],
+                                                                      ctx.obj['MEM'],
+                                                                      run_dp)
+    submit(ctx=ctx, cmd=cmd)
+
+
+
+@cli.command()
+@click.argument('run_dp')
+@click.pass_context
+def run_mapping(ctx, run_dp):
+    """ Run read mapping against reference for entire Illumina run """
+    click.echo('Run Mapping called')
+    cmd = 'source {} && python {} -o {} -p {} -m {} run_qc {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                      ctx.obj['MAPSCRIPT'],
                                                                       ctx.obj['OUTPUT'],
                                                                       ctx.obj['PPN'],
                                                                       ctx.obj['MEM'],
