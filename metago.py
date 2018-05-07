@@ -56,7 +56,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
         cmd[metago_index] = metago_fp
         cmd.remove('--flux')
         cmd = ' '.join(cmd)
-        qsub = 'qsub -N metaGO -A {} -q fluxm -l nodes=1:ppn={},mem={}mb,walltime={}'.format(
+        qsub = 'qsub -N metaGO -A {} -q fluxod -l nodes=1:ppn={}:largemem,mem={}mb,walltime={}'.format(
                                                                    account, ppn, mem, walltime)
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
         sys.exit('Launched command via Flux')
@@ -103,18 +103,36 @@ def run_qc(ctx, run_dp):
 
 @cli.command()
 @click.argument('run_dp')
+@click.option('--reference', '-r', required=True)
 @click.pass_context
 def run_mapping(ctx, run_dp):
     """ Run read mapping against reference for entire Illumina run """
     click.echo('Run Mapping called')
-    cmd = 'source {} && python {} -o {} -p {} -m {} run_qc {}'.format(ctx.obj['ENVIRONMENT'],
+    cmd = 'source {} && python {} -o {} -p {} -m {} run_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
                                                                       ctx.obj['OUTPUT'],
                                                                       ctx.obj['PPN'],
                                                                       ctx.obj['MEM'],
-                                                                      run_dp)
+                                                                      run_dp,
+                                                                      reference)
     submit(ctx=ctx, cmd=cmd)
 
+
+@cli.command()
+@click.argument('sample_fp')
+@click.option('--reference', '-r', required=True)
+@click.pass_context
+def sample_mapping(ctx, sample_fp, reference):
+    """ Run read mapping against reference for entire Illumina run """
+    click.echo('Run Mapping called')
+    cmd = 'source {} && python {} -o {} -p {} -m {} sample_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                      ctx.obj['MAPSCRIPT'],
+                                                                      ctx.obj['OUTPUT'],
+                                                                      ctx.obj['PPN'],
+                                                                      ctx.obj['MEM'],
+                                                                      sample_fp,
+                                                                      reference)
+    submit(ctx=ctx, cmd=cmd)
 
 if __name__ == "__main__":
     cli(obj={})
