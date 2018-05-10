@@ -105,7 +105,7 @@ def run_qc(ctx, run_dp):
 @click.argument('run_dp')
 @click.option('--reference', '-r', required=True)
 @click.pass_context
-def run_mapping(ctx, run_dp):
+def run_mapping(ctx, run_dp, reference):
     """ Run read mapping against reference for entire Illumina run """
     click.echo('Run Mapping called')
     cmd = 'source {} && python {} -o {} -p {} -m {} run_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
