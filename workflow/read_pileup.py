@@ -41,15 +41,16 @@ class SampleReadPileup(FluxWorkflowRunner):
             self.addTask('samsort', nCores=1, memMb=768, command=cmd, dependencies=submitted_cmds)
             submitted_cmds.append('samsort')
 
-        index_fp = bam_fp += '.bai'
+        index_fp = bam_fp + '.bai'
         if not os.path.exists(index_fp):
             cmd = 'source {} && '.format(env)
             cmd += 'samtools index {}'.format(bam_fp)
             self.addTask('samindex', nCores=1, memMb=768, command=cmd, dependencies=submitted_cmds)
             submitted_cmds.append('samindex')
 
-        
-
+        cmd = 'source {} && '.format(env)
+        cmd += 'pyleup visualize {}'.format(bam_fp) 
+        self.addTask('pileup', nCores=1, memMb=768, command=cmd, dependencies=submitted_cmds)
         
 
 
