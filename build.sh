@@ -10,7 +10,7 @@
 
 
 # install miniconda for local independent package management
-wget https://repo.continuum.io/archive/Anaconda2-4.3.1-Linux-x86.sh -O miniconda.sh
+wget https://repo.continuum.io/archive/Anaconda2-4.3.1-Linux-x86_64.sh -O miniconda.sh
 mkdir dependencies
 chmod 775 miniconda.sh
 chmod 775 dependencies
@@ -21,9 +21,10 @@ rm miniconda.sh
 source ./dependencies/miniconda/bin/activate
 
 pip install click
+pip install git+https://github.com/jordangumm/pyleup.git 
 
 # add bioconda and r channel for easy dependency installations
-conda install -c bioconda bbmap megahit prodigal prokka emirge
+conda install -c bioconda bbmap megahit prodigal prokka emirge pysam
 conda install -c conda-forge conda-execute
 
 # install pyflow for automated task management
@@ -40,7 +41,7 @@ rm mga_x86_64.tar.gz
 
 git clone https://github.com/simroux/VirSorter.git
 mv VirSorter dependencies/
-cd dependencies/VirSorter/Scripts && make && cd ../../
+cd dependencies/VirSorter/Scripts && make && cd ../../../
 ln -s dependencies/VirSorter/wrapper_phage_contigs_sorter_iPlant.pl dependencies/miniconda/bin
 ln -s dependencies/VirSorter/Scripts dependencies/miniconda/bin
 
