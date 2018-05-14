@@ -5,9 +5,9 @@ import click
 import random
 import string
 
-from workflow.pyflux import FluxWorkflowRunner
-from workflow.quality_control import RunQualityControl
-from workflow.quality_control import SampleQualityControl
+from metago.pyflux import FluxWorkflowRunner
+from metago.quality_control import RunQualityControl
+from metago.quality_control import SampleQualityControl
 from subprocess import call
 
 
