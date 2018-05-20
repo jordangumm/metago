@@ -83,7 +83,7 @@ class SampleQualityControl(FluxWorkflowRunner):
                 trimmed_fp = os.path.join(sample_output_dp, 'quality_controlled', '{}.fastq'.format(pair))
                 if not os.path.exists(trimmed_fp):
                     cmd = 'source {} && bbduk.sh in={} out={} ref={}'.format(conda, interleaved_fp, trimmed_fp, adapters)
-                    cmd += ' ktrim=r k=23 mink=11 hdist=1 tpe tbo t=4 qtrim=rl trimq=20 maq=20 interleaved=t'
+                    cmd += ' ktrim=r k=23 mink=11 hdist=1 tpe tbo t=4 qtrim=rl trimq=20 maq=20 interleaved=t minlen=70'
                     self.addTask("trim_{}".format(pair), nCores=4, memMb=pair_size*2, command=cmd, dependencies=pair_tasks) 
                     pair_tasks.append("trim_{}".format(pair))
                 scheduled_tasks += pair_tasks
