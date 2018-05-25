@@ -54,7 +54,9 @@ class SampleQualityControl(FluxWorkflowRunner):
         To consider: integrating memory estimation to dynamically set requirements
         """
         pairs, is_paired = self.get_fastq_pairs(self.fastqs) # put in workflow instead of __init__ so print statements log
-        if len(pairs) == 0: sys.exit("No pairs found")
+        if len(pairs) == 0:
+            print("No pairs found: is the post-QC output?")
+            return
         fp = os.path.dirname(os.path.abspath(__file__))
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
         adapters = os.path.join(fp, '../dependencies/adapters.fa')

@@ -72,24 +72,56 @@ class RunSampleAssembly(FluxWorkflowRunner):
             self.addWorkflowTask(label=sample, workflowRunnerInstance=sample_assembly_runner)
 
 
-@click.command()
-@click.option('--run_dp', '-r', required=True)
-@click.option('--output_dp', '-o', required=True)
+@click.group()
+@click.option('--output', '-o', required=True)
 @click.option('--ppn', '-p', required=True)
 @click.option('--mem', '-m', required=True)
-def runner(run_dp, output_dp, ppn, mem):
-    """ Analysis Workflow Management
+@click.pass_context
+def cli(ctx, output, ppn, mem):
+    if not os.path.exists(output): os.makedirs(output)
+    ctx.obj['OUTPUT'] = output
+    ctx.obj['PPN'] = ppn
+    ctx.obj['MEM'] = mem
 
-    Sets up Pyflow WorkflowRunner and launches locally by default or via flux
+
+@cli.command()
+@click.option('--sample_dp', '-s', required=True)
+@click.pass_context
+def sample_assembly(ctx, sample_dp):
+    """ Sample assembly subworkflow manager """
+    r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_assembly_{}'.format(r))
+
+    sid = os.path.basename(sample_dp).replace('_Sample','')
+
+    sample_fastq = ''
+    for fastq in os.listdir(sample_dp):
+        if 'fastq' not in fastq: continue
+        fastq_fp = os.path.join(sample_dp, fastq)
+        sample_fastq = fastq_fp
+        break # this file should be a single interleaved and quality controlled fastq
+
+    runner = SampleAssembly(sid=sid, fastq=sample_fastq, output_dp=ctx.obj['OUTPUT'],
+                            max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
+    runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM']) 
+
+
+@cli.command()
+@click.option('--run_dp', required=True)
+@click.pass_context
+def run_assembly(ctx, run_dp):
+    """ Run assembly subworkflow manager
 
     Arguments:
     run_dp -- String path to run directory to use for analysis
     """
-    log_output_dp = os.path.join(output_dp, 'logs')
+    r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/run_assembly_{}'.format(r))
 
-    workflow_runner = RunSampleAssembly(run_dp=run_dp, output_dp=output_dp, max_ppn=ppn, max_mem=mem)
-    workflow_runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ppn, memMb=mem)
+    runner = RunSampleAssembly(run_dp=run_dp, output_dp=ctx.obj['OUTPUT'],
+                               max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
+    runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
 
 
 if __name__ == "__main__":
-    runner()
+    cli(obj={})

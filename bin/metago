@@ -40,16 +40,16 @@ def submit(ctx, cmd):
 @click.pass_context
 def cli(ctx, output, flux, account, ppn, mem, walltime):
     if not os.path.exists(output): os.makedirs(output)
-    fp = os.path.dirname(os.path.abspath(__file__))
+    fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
     environment = os.path.join(fp, 'dependencies/miniconda/bin/activate')
      
     if flux:
         if not account: sys.exit('To attempt a submission to the flux cluster you need to supply an --account/-a')
         full_dp = os.path.dirname(os.path.abspath(__file__))
-        metago_fp = os.path.join(full_dp, 'metago.py')
+        metago_fp = os.path.join(full_dp, 'metago')
         metago_index = -1
         for i, s in enumerate(sys.argv):
-            if 'metago.py' in s:
+            if 'metago' in s:
                 metago_index = i
                 break
         cmd = sys.argv
@@ -61,8 +61,9 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
         sys.exit('Launched command via Flux')
     ctx.obj['ENVIRONMENT'] = environment
-    ctx.obj['QCSCRIPT'] = os.path.join(fp, 'workflow/quality_control.py')
-    ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'workflow/read_pileup.py')
+    ctx.obj['QCSCRIPT'] = os.path.join(fp, 'metago/quality_control.py')
+    ctx.obj['ASSEMBLYSCRIPT'] = os.path.join(fp, 'metago/assembly.py')
+    ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'metago/read_pileup.py')
     ctx.obj['OUTPUT'] = output
     ctx.obj['FLUX'] = flux
     ctx.obj['ACCOUNT'] = account
@@ -98,6 +99,34 @@ def run_qc(ctx, run_dp):
                                                                       ctx.obj['MEM'],
                                                                       run_dp)
     submit(ctx=ctx, cmd=cmd)
+
+
+@cli.command()
+@click.argument('sample_dp')
+@click.pass_context
+def sample_assembly(ctx, sample_dp):
+    """ Run sample assembly sub-workflow """
+    cmd = 'source {} && python {} -o {} -p {} -m {} sample_assembly {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                               ctx.obj['ASSEMBLYSCRIPT'],
+                                                                               ctx.obj['OUTPUT'],
+                                                                               ctx.obj['PPN'],
+                                                                               ctx.obj['MEM'],
+                                                                               sample_dp)
+    submit(ctx=ctx, cmd=cmd)
+    
+    
+
+
+@cli.command()
+@click.argument('sample_dp')
+@click.pass_context
+def viral_sample_workflow(ctx, sample_dp):
+    """ Run base viral workflow against run """
+    click.echo('Base viral sample workflow called')
+    result = ctx.invoke(sample_qc, sample_dp=sample_dp)
+    print(result)
+    result = ctx.invoke(sample_assembly, sample_dp=sample_dp)
+
 
 
 

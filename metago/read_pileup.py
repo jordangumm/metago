@@ -49,7 +49,7 @@ class SampleReadPileup(FluxWorkflowRunner):
             submitted_cmds.append('samindex')
 
         cmd = 'source {} && '.format(env)
-        cmd += 'pyleup visualize {}'.format(bam_fp) 
+        cmd += 'pyleup visualize {} -o {}'.format(bam_fp, output_dp) 
         self.addTask('pileup', nCores=1, memMb=768, command=cmd, dependencies=submitted_cmds)
         
 
