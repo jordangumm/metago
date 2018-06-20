@@ -113,19 +113,15 @@ def run_pileup(ctx, run_dp, reference):
 
 
 @cli.command()
-@click.argument('sample_dp')
+@click.argument('sample_fp')
 @click.option('--reference', '-r', required=True)
 @click.pass_context
-def sample_pileup(ctx, sample_dp, reference):
+def sample_pileup(ctx, sample_fp, reference):
     """ Map reads from sample fastqs/fastas to reference and visualize """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_pileup_{}'.format(r))
 
-    fastq = [x for x in os.listdir(sample_dp) if '.fastq' in x]
-    if len(fastq) > 1: sys.exit('Multiple fastqs in {}\nPre-processed sample required!'.format(sample_dp))
-    if len(fastq) == 0: sys.exit('No fastq in {}\nPre-processed sample required!'.format(sample_dp))
-    fastq = os.path.join(sample_dp, fastq[0])
-    runner = SampleReadPileup(fastq=fastq,
+    runner = SampleReadPileup(fastq=sample_fp,
                            reference=reference,
                            output=ctx.obj['OUTPUT'],
                            max_ppn=ctx.obj['PPN'],
