@@ -85,7 +85,7 @@ def cli(ctx, output, ppn, mem):
 
 
 @cli.command()
-@click.option('--sample_dp', '-s', required=True)
+@click.argument('sample_dp')
 @click.pass_context
 def sample_assembly(ctx, sample_dp):
     """ Sample assembly subworkflow manager """
@@ -107,7 +107,7 @@ def sample_assembly(ctx, sample_dp):
 
 
 @cli.command()
-@click.option('--run_dp', required=True)
+@click.argument('run_dp')
 @click.pass_context
 def run_assembly(ctx, run_dp):
     """ Run assembly subworkflow manager
