@@ -28,7 +28,7 @@ class SampleAssembly(FluxWorkflowRunner):
 
 
     def workflow(self):
-        """ Quality Control Workflow
+        """ Sample Assembly Workflow
         
         To consider: estimating diversity (genome complexity) and depth to inform assembly parameter settings
         """
@@ -46,6 +46,15 @@ class SampleAssembly(FluxWorkflowRunner):
             print 'cmd: {}'.format(cmd)
             self.addTask("normalize_{}".format(self.sid), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
             scheduled_tasks.append("normalize_{}".format(self.sid))
+
+        assembly_dp = os.path.join(sample_output_dp, 'assembly')
+        if not os.path.exists(assembly_dp):
+            os.makedirs(assembly_dp)
+        if len(os.listdir(assembly_dp)) == 0:
+            cmd = 'source {} && megahit --12 {} -o {}'.format(conda, normalized_fp, assembly_dp)
+            print 'cmd: {}'.format(cmd)
+            self.addTask('assemble_{}'.format(self.sid), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
+            scheduled_tasks.append('assemble_{}'.format(self.sid))
 
 
 class RunSampleAssembly(FluxWorkflowRunner):
@@ -67,8 +76,11 @@ class RunSampleAssembly(FluxWorkflowRunner):
                 sample_fastq = fastq_fp
                 break # this file should be a single interleaved and quality controlled fastq
 
-            sample_assembly_runner = SampleAssembly(sid=sample.replace('Sample_',''), fastq=sample_fastq, output_dp=self.output_dp,
-                                                                     max_ppn=self.max_ppn, max_mem=self.max_mem)
+            sample_assembly_runner = SampleAssembly(sid=sample.replace('Sample_',''),
+                                                    fastq=sample_fastq,
+                                                    output_dp=self.output_dp,
+                                                    max_ppn=self.max_ppn,
+                                                    max_mem=self.max_mem)
             self.addWorkflowTask(label=sample, workflowRunnerInstance=sample_assembly_runner)
 
 
