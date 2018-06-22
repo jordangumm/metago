@@ -31,7 +31,7 @@ $ python setup.py install
 
 # Usage
 
-`metago --help`
+`$ metago --help`
 ```
 Usage: metago [OPTIONS] COMMAND [ARGS]...
 
