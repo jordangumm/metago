@@ -16,3 +16,40 @@ A CLI that aims to automate common metagenome pipeline steps, with a subsequent 
 ## Resources
 
 1. Micro-Phage Interaction Database: [MVP](http://mvp.medgenius.info/home)
+
+# Setup
+
+## Github Install
+```
+$ git clone https://github.com/jordangumm/metago.git
+$ cd metago && ./build
+$ python setup.py install
+```
+## Singularity Install
+
+> In Development!
+
+# Usage
+
+`metago --help`
+```
+Usage: metago [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  -o, --output TEXT
+  --flux / --no-flux
+  -a, --account TEXT
+  -p, --ppn INTEGER
+  -m, --mem TEXT
+  -w, --walltime TEXT
+  --help               Show this message and exit.
+
+Commands:
+  run_mapping            Run read mapping against reference for entire...
+  run_minhash            Run minhash compute/compare against fastq...
+  run_qc                 Run quality control against entire Illumina...
+  sample_assembly        Run sample assembly sub-workflow
+  sample_mapping         Run read mapping against reference for entire...
+  sample_qc              Sample quality control against Illumina...
+  viral_sample_workflow  Run base viral workflow against run
+```
