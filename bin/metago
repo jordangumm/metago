@@ -13,9 +13,10 @@ try:
     from metago.quality_control import RunQualityControl
     from metago.quality_control import SampleQualityControl
 except ImportError:
+    print 'Failed to load modules: Loading virtual environment...'
     fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
-    environment = os.path.join(fp, 'dependencies/miniconda/bin/activate')
-    call('source {} && {}'.format(environment, ' '.join(sys.argv)), shell=True)
+    environment = os.path.join(fp, 'dependencies/miniconda/bin/python')
+    call('{} {}'.format(environment, ' '.join(sys.argv)), shell=True)
     sys.exit()
 
 
