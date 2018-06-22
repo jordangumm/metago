@@ -1,14 +1,22 @@
 #!/usr/bin/env python
 
+
 import os, sys
 import click
 import random
 import string
 
-from metago.pyflux import FluxWorkflowRunner
-from metago.quality_control import RunQualityControl
-from metago.quality_control import SampleQualityControl
 from subprocess import call
+
+try:
+    from metago.pyflux import FluxWorkflowRunner
+    from metago.quality_control import RunQualityControl
+    from metago.quality_control import SampleQualityControl
+except ImportError:
+    fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
+    environment = os.path.join(fp, 'dependencies/miniconda/bin/activate')
+    call('source {} && {}'.format(environment, ' '.join(sys.argv)), shell=True)
+    sys.exit()
 
 
 class Runner(FluxWorkflowRunner):
@@ -64,6 +72,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
     ctx.obj['QCSCRIPT'] = os.path.join(fp, 'metago/quality_control.py')
     ctx.obj['ASSEMBLYSCRIPT'] = os.path.join(fp, 'metago/assembly.py')
     ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'metago/read_pileup.py')
+    ctx.obj['MINHASHSCRIPT'] = os.path.join(fp, 'metago/minhash.py')
     ctx.obj['OUTPUT'] = output
     ctx.obj['FLUX'] = flux
     ctx.obj['ACCOUNT'] = account
@@ -126,6 +135,27 @@ def viral_sample_workflow(ctx, sample_dp):
     result = ctx.invoke(sample_qc, sample_dp=sample_dp)
     print(result)
     result = ctx.invoke(sample_assembly, sample_dp=sample_dp)
+
+
+@cli.command()
+@click.argument('run_dp')
+@click.option('--num_hashes', '-n')
+@click.option('--kmer_length', '-k')
+@click.pass_context
+def run_minhash(ctx, run_dp, num_hashes, kmer_length):
+    """ Run minhash compute/compare against fastq directory of samples
+
+    Requires that sample fastq(s) be in independent 'Sample_' like output from Illumina's bcl2fastq
+    """
+    cmd = 'source {} && python {} -o {} -p {} -m {} run_minhash {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                           ctx.obj['MINHASHSCRIPT'],
+                                                                           ctx.obj['OUTPUT'],
+                                                                           ctx.obj['PPN'],
+                                                                           ctx.obj['MEM'],
+                                                                           sample_dp)
+    if num_hashes: cmd += ' --num_hashes={}'.format(num_hashes)
+    if kmer_length: cmd += ' --kmer_length={}'.format(kmer_length)
+    submit(ctx=ctx, cmd=cmd)
 
 
 
