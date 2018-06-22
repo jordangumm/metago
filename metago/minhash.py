@@ -11,10 +11,10 @@ from subprocess import call
 
 
 class SampleCompute(FluxWorkflowRunner):
-    def __init__(self, fastq, output_dp, scale, kmer_length, max_ppn, max_mem):
+    def __init__(self, fastq, output_dp, num_hashes, kmer_length, max_ppn, max_mem):
         self.fastq = fastq
         self.output_dp = output_dp
-        self.scale = scale
+        self.num_hashes = num_hashes
         self.kmer_length = kmer_length
 
         self.max_ppn = int(max_ppn)
@@ -32,18 +32,18 @@ class SampleCompute(FluxWorkflowRunner):
         output_fp = os.path.join(self.output_dp, self.fastq.split('/')[-1].split('.')[0])
 
         scheduled_tasks = []
-        cmd = 'source {} && sourmash compute --scaled {} -k {} -o {} {}'.format(
-                      conda, self.scale, self.kmer_length, output_fp, self.fastq)
+        cmd = 'source {} && sourmash compute --num_hashesd {} -k {} -o {} {}'.format(
+                      conda, self.num_hashes, self.kmer_length, output_fp, self.fastq)
         print 'cmd: {}'.format(cmd)
         self.addTask("compute", nCores=1, memMb=1000, command=cmd)
         scheduled_tasks.append("compute")
 
 
 class RunMinHash(FluxWorkflowRunner):
-    def __init__(self, run_dp, output_dp, scale, kmer_length, max_ppn, max_mem):
+    def __init__(self, run_dp, output_dp, num_hashes, kmer_length, max_ppn, max_mem):
         self.run_dp = run_dp
         self.output_dp = output_dp
-        self.scale = scale
+        self.num_hashes = num_hashes
         self.kmer_length = kmer_length
 
         self.max_ppn = max_ppn
@@ -69,7 +69,7 @@ class RunMinHash(FluxWorkflowRunner):
 
             sample_assembly_runner = SampleCompute(fastq=sample_fastq,
                                                     output_dp=signatures_dp,
-                                                    scale=self.scale,
+                                                    num_hashes=self.num_hashes,
                                                     kmer_length=self.kmer_length,
                                                     max_ppn=self.max_ppn,
                                                     max_mem=self.max_mem)
@@ -100,10 +100,10 @@ def cli(ctx, output, ppn, mem):
 
 @cli.command()
 @click.argument('run_dp')
-@click.option('--scale', '-s', default=10000)
+@click.option('--num_hashes', '-s', default=500)
 @click.option('--kmer_length', '-k', default=31, help='minhash kmer length to use (default=31, recommended for genus level)')
 @click.pass_context
-def run_minhash(ctx, run_dp, scale, kmer_length):
+def run_minhash(ctx, run_dp, num_hashes, kmer_length):
     """ Run assembly subworkflow manager
 
     Arguments:
@@ -112,7 +112,7 @@ def run_minhash(ctx, run_dp, scale, kmer_length):
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/minhash_{}'.format(r))
 
-    runner = RunMinHash(run_dp=run_dp, output_dp=ctx.obj['OUTPUT'], scale=scale, kmer_length=kmer_length,
+    runner = RunMinHash(run_dp=run_dp, output_dp=ctx.obj['OUTPUT'], num_hashes=num_hashes, kmer_length=kmer_length,
                                                            max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
     runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
 
