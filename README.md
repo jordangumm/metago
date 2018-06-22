@@ -4,7 +4,7 @@ A CLI that aims to automate common metagenome pipeline steps, with a subsequent 
 
 # Workflow Overview
 
-## General Steps
+## General Steps and Opinionated Software List
 
 1. Quality Control: [BBDuk](https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/bbduk-guide/)
 2. Assembly: [MegaHit](https://academic.oup.com/bioinformatics/article/31/10/1674/177884)
