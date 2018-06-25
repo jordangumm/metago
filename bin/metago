@@ -13,7 +13,7 @@ try:
     from metago.quality_control import RunQualityControl
     from metago.quality_control import SampleQualityControl
 except ImportError:
-    print 'Failed to load modules: Loading virtual environment...'
+    print 'Loading virtual environment...'
     fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
     environment = os.path.join(fp, 'dependencies/miniconda/bin/python')
     call('{} {}'.format(environment, ' '.join(sys.argv)), shell=True)
@@ -48,6 +48,10 @@ def submit(ctx, cmd):
 @click.option('--walltime', '-w', default='2:00:00')
 @click.pass_context
 def cli(ctx, output, flux, account, ppn, mem, walltime):
+    """ Metago Command Line Interface
+
+    Note: Use absolute paths to all files and directories
+    """
     if not os.path.exists(output): os.makedirs(output)
     fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
     environment = os.path.join(fp, 'dependencies/miniconda/bin/activate')
@@ -153,7 +157,7 @@ def run_minhash(ctx, run_dp, num_hashes, kmer_length):
                                                                            ctx.obj['OUTPUT'],
                                                                            ctx.obj['PPN'],
                                                                            ctx.obj['MEM'],
-                                                                           sample_dp)
+                                                                           run_dp)
     if num_hashes: cmd += ' --num_hashes={}'.format(num_hashes)
     if kmer_length: cmd += ' --kmer_length={}'.format(kmer_length)
     submit(ctx=ctx, cmd=cmd)

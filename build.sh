@@ -51,3 +51,12 @@ mv VirHostMatcher dependencies/
 
 # download adapters for trimming
 wget https://raw.githubusercontent.com/BioInfoTools/BBMap/master/resources/adapters.fa -O dependencies/adapters.fa
+
+conda create -n py3 python=3.5
+source activate py3
+
+pip install -U pip
+pip install -U Cython
+pip install -U jupyter jupyter_client ipython pandas matplotlib scipy scikit-learn khmer
+
+pip install -U https://github.com/dib-lab/sourmash/archive/master.zip
