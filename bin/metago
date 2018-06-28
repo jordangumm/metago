@@ -186,7 +186,6 @@ def run_minhash(ctx, run_dp, num_hashes, kmer_length):
 @click.pass_context
 def run_mapping(ctx, run_dp, reference):
     """ Run read mapping against reference for entire Illumina run """
-    click.echo('Run Mapping called')
     cmd = 'source {} && python {} -o {} -p {} -m {} run_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
                                                                       ctx.obj['OUTPUT'],
@@ -203,9 +202,41 @@ def run_mapping(ctx, run_dp, reference):
 @click.pass_context
 def sample_mapping(ctx, sample_fp, reference):
     """ Run read mapping against reference for entire Illumina run """
-    click.echo('Run Mapping called')
     cmd = 'source {} && python {} -o {} -p {} -m {} sample_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
+                                                                      ctx.obj['OUTPUT'],
+                                                                      ctx.obj['PPN'],
+                                                                      ctx.obj['MEM'],
+                                                                      sample_fp,
+                                                                      reference)
+    submit(ctx=ctx, cmd=cmd)
+
+
+@cli.command()
+@click.argument('run_dp')
+@click.option('--reference', '-r', required=True)
+@click.pass_context
+def run_pseudoalign(ctx, run_dp, reference):
+    """ Run read assignment of reference for entire Illumina run """
+    click.echo('Run Mapping called')
+    cmd = 'source {} && python {} -o {} -p {} -m {} run_pseudoalign {} -r {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                      ctx.obj['PSEUDOALIGNSCRIPT'],
+                                                                      ctx.obj['OUTPUT'],
+                                                                      ctx.obj['PPN'],
+                                                                      ctx.obj['MEM'],
+                                                                      run_dp,
+                                                                      reference)
+    submit(ctx=ctx, cmd=cmd)
+
+
+@cli.command()
+@click.argument('sample_fp')
+@click.option('--reference', '-r', required=True)
+@click.pass_context
+def sample_pseudoalign(ctx, sample_fp, reference):
+    """ Run read assignment against reference to an Illumina sample """
+    cmd = 'source {} && python {} -o {} -p {} -m {} sample_pseudoalign {} -r {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                      ctx.obj['PSEUDOALIGNSCRIPT'],
                                                                       ctx.obj['OUTPUT'],
                                                                       ctx.obj['PPN'],
                                                                       ctx.obj['MEM'],
