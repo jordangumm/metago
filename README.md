@@ -31,6 +31,9 @@ $ python setup.py install
 
 # Usage
 
+## Base Command
+The `metago` command is your interface to a myriad of workflow commands.  It requires fastq files to be organized in Illumina fashion, that is in the form of `Run_[RUNID]/Sample_[SAMPLEID]/[SAMPLEID].fastq`.  Run-based commands target a run directory and will process every sample automatically.  Sample-based commands target a single sample or fastq file.  The quality control step interleaves fastqs, so ensure you run your fastq sample files through that step first if you want to be able to leverage downstream commands.
+
 `$ metago --help`
 ```
 Usage: metago [OPTIONS] COMMAND [ARGS]...
@@ -59,3 +62,20 @@ Commands:
   sample_pseudoalign  Read assignment of sample to reference
   sample_qc           Quality control of Illumina sample
 ```
+
+## Secondary Commands
+The workflow commands require their own arguments and options.
+
+`$ metago sample_qc --help`
+```
+Usage: metago sample_qc [OPTIONS] SAMPLE_DP
+
+  Quality control of Illumina sample
+
+Options:
+  --help  Show this message and exit.
+```
+
+Make sure to provide arguments and commands at the appropriate command level.  `metago` expects resource and output information, while secondary commands require more data-specific information, like what fastq to process or analyze.  Below is an example command that specifies an output path and 4 hour walltime limit for quality controlling a sample.
+
+`$ metago -o /scratch/analysis/Sample_1234 -w 4:00:00 sample_qc /nfs/longterm_storage/Sample_1234`
