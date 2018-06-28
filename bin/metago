@@ -91,7 +91,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
 @click.argument('sample_dp')
 @click.pass_context
 def sample_qc(ctx, sample_dp):
-    """ Sample quality control against Illumina sample """
+    """ Quality control of Illumina sample """
     click.echo('Sample QC called')
     cmd = 'source {} && python {} -o {} -p {} -m {} sample_qc {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['QCSCRIPT'],
@@ -105,7 +105,7 @@ def sample_qc(ctx, sample_dp):
 @click.argument('run_dp')
 @click.pass_context
 def run_qc(ctx, run_dp):
-    """ Run quality control against entire Illumina run """
+    """ Quality control of Illumina run """
     click.echo('Run QC called')
     cmd = 'source {} && python {} -o {} -p {} -m {} run_qc {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['QCSCRIPT'],
@@ -134,7 +134,7 @@ def sample_assembly(ctx, sample_dp):
 @click.argument('run_dp')
 @click.pass_context
 def run_assembly(ctx, run_dp):
-    """ Assembly run sample reads """
+    """ Assemble run sample reads """
     cmd = 'source {} && python {} -o {} -p {} -m {} run_assembly {}'.format(ctx.obj['ENVIRONMENT'],
                                                                                ctx.obj['ASSEMBLYSCRIPT'],
                                                                                ctx.obj['OUTPUT'],
@@ -143,18 +143,16 @@ def run_assembly(ctx, run_dp):
                                                                                run_dp)
     submit(ctx=ctx, cmd=cmd)
     
-    
 
-
-@cli.command()
-@click.argument('sample_dp')
-@click.pass_context
-def viral_sample_workflow(ctx, sample_dp):
-    """ Run base viral workflow against run """
-    click.echo('Base viral sample workflow called')
-    result = ctx.invoke(sample_qc, sample_dp=sample_dp)
-    print(result)
-    result = ctx.invoke(sample_assembly, sample_dp=sample_dp)
+#@cli.command()
+#@click.argument('sample_dp')
+#@click.pass_context
+#def viral_sample_workflow(ctx, sample_dp):
+#    """ Run base viral workflow against run """
+#    click.echo('Base viral sample workflow called')
+#    result = ctx.invoke(sample_qc, sample_dp=sample_dp)
+#    print(result)
+#    result = ctx.invoke(sample_assembly, sample_dp=sample_dp)
 
 
 @cli.command()
@@ -163,10 +161,7 @@ def viral_sample_workflow(ctx, sample_dp):
 @click.option('--kmer_length', '-k')
 @click.pass_context
 def run_minhash(ctx, run_dp, num_hashes, kmer_length):
-    """ Run minhash compute/compare against fastq directory of samples
-
-    Requires that sample fastq(s) be in independent 'Sample_' like output from Illumina's bcl2fastq
-    """
+    """ Minhash compare fastqs in run """
     cmd = 'source {} && python {} -o {} -p {} -m {} run_minhash {}'.format(ctx.obj['ENVIRONMENT'],
                                                                            ctx.obj['MINHASHSCRIPT'],
                                                                            ctx.obj['OUTPUT'],
@@ -185,7 +180,7 @@ def run_minhash(ctx, run_dp, num_hashes, kmer_length):
 @click.option('--reference', '-r', required=True)
 @click.pass_context
 def run_mapping(ctx, run_dp, reference):
-    """ Run read mapping against reference for entire Illumina run """
+    """ Read mapping of run to reference """
     cmd = 'source {} && python {} -o {} -p {} -m {} run_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
                                                                       ctx.obj['OUTPUT'],
@@ -201,7 +196,7 @@ def run_mapping(ctx, run_dp, reference):
 @click.option('--reference', '-r', required=True)
 @click.pass_context
 def sample_mapping(ctx, sample_fp, reference):
-    """ Run read mapping against reference for entire Illumina run """
+    """ Read mapping of reference to sample """
     cmd = 'source {} && python {} -o {} -p {} -m {} sample_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
                                                                       ctx.obj['OUTPUT'],
@@ -217,7 +212,7 @@ def sample_mapping(ctx, sample_fp, reference):
 @click.option('--reference', '-r', required=True)
 @click.pass_context
 def run_pseudoalign(ctx, run_dp, reference):
-    """ Run read assignment of reference for entire Illumina run """
+    """ Read assignment of run to reference """
     click.echo('Run Mapping called')
     cmd = 'source {} && python {} -o {} -p {} -m {} run_pseudoalign {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['PSEUDOALIGNSCRIPT'],
@@ -234,7 +229,7 @@ def run_pseudoalign(ctx, run_dp, reference):
 @click.option('--reference', '-r', required=True)
 @click.pass_context
 def sample_pseudoalign(ctx, sample_fp, reference):
-    """ Run read assignment against reference to an Illumina sample """
+    """ Read assignment of sample to reference """
     cmd = 'source {} && python {} -o {} -p {} -m {} sample_pseudoalign {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['PSEUDOALIGNSCRIPT'],
                                                                       ctx.obj['OUTPUT'],

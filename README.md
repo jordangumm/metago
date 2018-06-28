@@ -49,14 +49,13 @@ Options:
   --help               Show this message and exit.
 
 Commands:
-  run_assembly           Assembly run sample reads
-  run_mapping            Run read mapping against reference for entire...
-  run_minhash            Run minhash compute/compare against fastq...
-  run_pseudoalign        Run read assignment of reference for entire...
-  run_qc                 Run quality control against entire Illumina...
-  sample_assembly        Assembly sample reads
-  sample_mapping         Run read mapping against reference for entire...
-  sample_pseudoalign     Run read assignment against reference to an...
-  sample_qc              Sample quality control against Illumina...
-  viral_sample_workflow  Run base viral workflow against run
+  run_assembly        Assemble run sample reads
+  run_mapping         Read mapping of run to reference
+  run_minhash         Minhash compare fastqs in run
+  run_pseudoalign     Read assignment of run to reference
+  run_qc              Quality control of Illumina run
+  sample_assembly     Assembly sample reads
+  sample_mapping      Read mapping of reference to sample
+  sample_pseudoalign  Read assignment of sample to reference
+  sample_qc           Quality control of Illumina sample
 ```
