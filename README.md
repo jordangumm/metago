@@ -35,6 +35,10 @@ $ python setup.py install
 ```
 Usage: metago [OPTIONS] COMMAND [ARGS]...
 
+  Metago Command Line Interface
+
+  Note: Use absolute paths to all files and directories
+
 Options:
   -o, --output TEXT
   --flux / --no-flux
@@ -45,11 +49,14 @@ Options:
   --help               Show this message and exit.
 
 Commands:
+  run_assembly           Assembly run sample reads
   run_mapping            Run read mapping against reference for entire...
   run_minhash            Run minhash compute/compare against fastq...
+  run_pseudoalign        Run read assignment of reference for entire...
   run_qc                 Run quality control against entire Illumina...
-  sample_assembly        Run sample assembly sub-workflow
+  sample_assembly        Assembly sample reads
   sample_mapping         Run read mapping against reference for entire...
+  sample_pseudoalign     Run read assignment against reference to an...
   sample_qc              Sample quality control against Illumina...
   viral_sample_workflow  Run base viral workflow against run
 ```
