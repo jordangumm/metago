@@ -78,6 +78,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
     ctx.obj['ASSEMBLYSCRIPT'] = os.path.join(fp, 'metago/assembly.py')
     ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'metago/read_pileup.py')
     ctx.obj['MINHASHSCRIPT'] = os.path.join(fp, 'metago/minhash.py')
+    ctx.obj['PSEUDOALIGNSCRIPT'] = os.path.join(fp, 'metago/pseudoalign.py')
     ctx.obj['OUTPUT'] = output
     ctx.obj['FLUX'] = flux
     ctx.obj['ACCOUNT'] = account
@@ -119,13 +120,27 @@ def run_qc(ctx, run_dp):
 @click.argument('sample_dp')
 @click.pass_context
 def sample_assembly(ctx, sample_dp):
-    """ Run sample assembly sub-workflow """
+    """ Assembly sample reads """
     cmd = 'source {} && python {} -o {} -p {} -m {} sample_assembly {}'.format(ctx.obj['ENVIRONMENT'],
                                                                                ctx.obj['ASSEMBLYSCRIPT'],
                                                                                ctx.obj['OUTPUT'],
                                                                                ctx.obj['PPN'],
                                                                                ctx.obj['MEM'],
                                                                                sample_dp)
+    submit(ctx=ctx, cmd=cmd)
+
+
+@cli.command()
+@click.argument('run_dp')
+@click.pass_context
+def run_assembly(ctx, run_dp):
+    """ Assembly run sample reads """
+    cmd = 'source {} && python {} -o {} -p {} -m {} run_assembly {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                               ctx.obj['ASSEMBLYSCRIPT'],
+                                                                               ctx.obj['OUTPUT'],
+                                                                               ctx.obj['PPN'],
+                                                                               ctx.obj['MEM'],
+                                                                               run_dp)
     submit(ctx=ctx, cmd=cmd)
     
     
