@@ -24,7 +24,7 @@ pip install click
 pip install git+https://github.com/jordangumm/pyleup.git 
 
 # add bioconda and r channel for easy dependency installations
-conda install -c bioconda bbmap megahit prodigal prokka emirge pysam
+conda install -c bioconda bbmap megahit prodigal prokka emirge pysam maxbin2 kallisto
 conda install -c conda-forge conda-execute
 
 # install pyflow for automated task management
