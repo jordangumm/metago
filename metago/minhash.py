@@ -29,11 +29,11 @@ class SampleCompute(FluxWorkflowRunner):
         fp = os.path.dirname(os.path.abspath(__file__))
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
 
-        output_fp = os.path.join(self.output_dp, self.fastq.split('/')[-1].split('.')[0])
+        output_fp = '{}.sig'.format(os.path.join(self.output_dp, self.fastq.split('/')[-1].split('.')[0]))
 
         scheduled_tasks = []
-        cmd = 'source {} && sourmash compute --num_hashesd {} -k {} -o {} {}'.format(
-                      conda, self.num_hashes, self.kmer_length, output_fp, self.fastq)
+        cmd = 'source {} && source activate py3 && sourmash compute {} --scaled {} -k {} -o {}'.format(
+                                            conda, self.fastq, self.num_hashes, self.kmer_length, output_fp)
         print 'cmd: {}'.format(cmd)
         self.addTask("compute", nCores=1, memMb=1000, command=cmd)
         scheduled_tasks.append("compute")
@@ -77,12 +77,13 @@ class RunMinHash(FluxWorkflowRunner):
             scheduled_jobs.append(sample)
 
         compare_fp = os.path.join(self.output_dp, 'sourmash_compare')
-        cmd = 'source {} && sourmash compare {}/* -o {}'.format(conda, signatures_dp, compare_fp)
+        cmd = 'source {} && source activate py3 && cd {} && sourmash compare *.sig -o {}'.format(
+                                                                          conda, signatures_dp, compare_fp)
         self.addTask('compare', nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=scheduled_jobs)
         scheduled_jobs.append('compare')
 
         plot_fp = os.path.join(self.output_dp, 'sourmash_plot')
-        cmd = 'source {} && sourmash plot {}'.format(conda, compare_fp)
+        cmd = 'source {} && source activate py3 && sourmash plot {} -o {}'.format(conda, compare_fp, plot_fp)
         self.addTask('plot', nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=scheduled_jobs)
 
 
@@ -100,7 +101,7 @@ def cli(ctx, output, ppn, mem):
 
 @cli.command()
 @click.argument('run_dp')
-@click.option('--num_hashes', '-s', default=500)
+@click.option('--num_hashes', '-s', default=10000)
 @click.option('--kmer_length', '-k', default=31, help='minhash kmer length to use (default=31, recommended for genus level)')
 @click.pass_context
 def run_minhash(ctx, run_dp, num_hashes, kmer_length):
