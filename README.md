@@ -23,7 +23,7 @@ A CLI that aims to automate common metagenome pipeline steps, with a subsequent 
 ```
 $ git clone https://github.com/jordangumm/metago.git
 $ cd metago && ./build
-$ python setup.py install
+$ pip install -e .
 ```
 ## Singularity Install
 
