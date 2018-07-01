@@ -51,7 +51,7 @@ class SampleAssembly(FluxWorkflowRunner):
         if not os.path.exists(assembly_dp):
             os.makedirs(assembly_dp)
         if len(os.listdir(assembly_dp)) == 0:
-            cmd = 'source {} && megahit --12 {} -t {} -o {}'.format(conda, normalized_fp, self.max_cpu, assembly_dp)
+            cmd = 'source {} && megahit --12 {} -t {} -o {}'.format(conda, normalized_fp, self.max_ppn, assembly_dp)
             print 'cmd: {}'.format(cmd)
             self.addTask('assemble_{}'.format(self.sid), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
             scheduled_tasks.append('assemble_{}'.format(self.sid))
