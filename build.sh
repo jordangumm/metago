@@ -36,7 +36,7 @@ tar -xvzf virsorter-data-v2.tar.gz -C dependencies/
 rm virsorter-data-v2.tar.gz
 
 wget http://metagene.nig.ac.jp/metagene/mga_x86_64.tar.gz
-tar -xvzf mga_x86_64.tar.gz -C dependencies/
+tar -xvzf mga_x86_64.tar.gz -C dependencies/miniconda/bin
 rm mga_x86_64.tar.gz
 
 git clone https://github.com/simroux/VirSorter.git
