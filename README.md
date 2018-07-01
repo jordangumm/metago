@@ -76,6 +76,6 @@ Options:
   --help  Show this message and exit.
 ```
 
-Make sure to provide arguments and commands at the appropriate command level.  `metago` expects resource and output information, while secondary commands require more data-specific information, like what fastq to process or analyze.  Below is an example command that specifies an output path and 4 hour walltime limit for quality controlling a sample.
+Make sure to provide arguments and options at the appropriate command level.  `metago` expects resource and output information, while secondary commands require more data-specific information, like what fastq to process or analyze.  Below is an example command that specifies an output path and 4 hour walltime limit for quality controlling a sample.
 
 `$ metago -o /scratch/analysis/Sample_1234 -w 4:00:00 sample_qc /nfs/longterm_storage/Sample_1234`
