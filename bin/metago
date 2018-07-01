@@ -76,6 +76,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
     ctx.obj['ENVIRONMENT'] = environment
     ctx.obj['QCSCRIPT'] = os.path.join(fp, 'metago/quality_control.py')
     ctx.obj['ASSEMBLYSCRIPT'] = os.path.join(fp, 'metago/assembly.py')
+    ctx.obj['BINNINGSCRIPT'] = os.path.join(fp, 'metago/binning.py')
     ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'metago/read_pileup.py')
     ctx.obj['MINHASHSCRIPT'] = os.path.join(fp, 'metago/minhash.py')
     ctx.obj['PSEUDOALIGNSCRIPT'] = os.path.join(fp, 'metago/pseudoalign.py')
@@ -141,6 +142,21 @@ def run_assembly(ctx, run_dp):
                                                                                ctx.obj['PPN'],
                                                                                ctx.obj['MEM'],
                                                                                run_dp)
+    submit(ctx=ctx, cmd=cmd)
+
+
+@cli.command()
+@click.argument('contig_fp')
+@click.argument('read_fp')
+@click.pass_context
+def sample_binning(ctx, contig_fp, read_fp):
+    """ Bin contigs """
+    cmd = 'source {} && python {} -o {} -p {} -m {} sample_binning -c {} -r {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                               ctx.obj['BINNINGSCRIPT'],
+                                                                               ctx.obj['OUTPUT'],
+                                                                               ctx.obj['PPN'],
+                                                                               ctx.obj['MEM'],
+                                                                               contig_fp, read_fp)
     submit(ctx=ctx, cmd=cmd)
     
 
