@@ -80,6 +80,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
     ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'metago/read_pileup.py')
     ctx.obj['MINHASHSCRIPT'] = os.path.join(fp, 'metago/minhash.py')
     ctx.obj['PSEUDOALIGNSCRIPT'] = os.path.join(fp, 'metago/pseudoalign.py')
+    ctx.obj['SUBSAMPLESCRIPT'] = os.path.join(fp, 'metago/subsample.py')
     ctx.obj['VIRSORTERSCRIPT'] = os.path.join(fp, 'metago/virsorter.py')
     ctx.obj['OUTPUT'] = output
     ctx.obj['FLUX'] = flux
@@ -268,6 +269,23 @@ def virsorter(ctx, fasta_fp):
                                                                          ctx.obj['PPN'],
                                                                          ctx.obj['MEM'],
                                                                          fasta_fp)
+    submit(ctx=ctx, cmd=cmd)
+
+@cli.command()
+@click.argument('fastq_fp')
+@click.option('--min_ratio', default=0.1)
+@click.option('--max_ratio', default=0.9)
+@click.option('--ratio_interval', default=0.1)
+@click.pass_context
+def subsample(ctx, fastq_fp, min_ratio, max_ratio, ratio_interval):
+    """ Subsample fastq at interval over ratio range """
+    cmd = 'source {} && python {} -o {} -p {} -m {} subsample {} --min_ratio {} --max_ratio {} --ratio_interval {}'.format(
+                                                                         ctx.obj['ENVIRONMENT'],
+                                                                         ctx.obj['SUBSAMPLESCRIPT'],
+                                                                         ctx.obj['OUTPUT'],
+                                                                         ctx.obj['PPN'],
+                                                                         ctx.obj['MEM'],
+                                                                         fastq_fp, min_ratio, max_ratio, ratio_interval)
     submit(ctx=ctx, cmd=cmd)
 
 

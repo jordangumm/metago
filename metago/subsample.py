@@ -4,6 +4,7 @@ import random
 import string
 
 import click
+import numpy as np
 from pyflux import FluxWorkflowRunner
 from subprocess import call
 
@@ -25,10 +26,10 @@ class SampleSubSampler(FluxWorkflowRunner):
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
 
         for x in np.arange(self.min_ratio, self.max_ratio+self.ratio_interval, self.ratio_interval):
-            cmd = 'source {} && reformat.sh in={} out={}/{}p_{} samplerate={}'.format(
-                          conda, self.fasta, self.output_dp, int(x*10), os.path.basename(self.fasta))
+            cmd = 'source {} && reformat.sh in={} out={}/{}p/{} samplerate={}'.format(
+                          conda, self.fasta, self.output_dp, int(x*100), os.path.basename(self.fasta), x)
             print 'cmd: {}'.format(cmd)
-            self.addTask('subsample_{}'.format(x), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
+            self.addTask('subsample_{}p'.format(int(x*100)), nCores=1, memMb=1000, command=cmd)
 
 
 @click.group()
@@ -43,12 +44,13 @@ def cli(ctx, output, ppn, mem):
     ctx.obj['MEM'] = mem
 
 
-@click.pass_context
+@cli.command()
 @click.argument('fasta_fp')
 @click.option('--min_ratio', default=0.1)
 @click.option('--max_ratio', default=0.9)
 @click.option('--ratio_interval', default=0.1)
-def subsample(ctx, fasta_fp):
+@click.pass_context
+def subsample(ctx, fasta_fp, min_ratio, max_ratio, ratio_interval):
     """ VirSorter subworkflow manager
 
     Arguments:
