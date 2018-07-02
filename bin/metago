@@ -80,6 +80,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
     ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'metago/read_pileup.py')
     ctx.obj['MINHASHSCRIPT'] = os.path.join(fp, 'metago/minhash.py')
     ctx.obj['PSEUDOALIGNSCRIPT'] = os.path.join(fp, 'metago/pseudoalign.py')
+    ctx.obj['VIRSORTERSCRIPT'] = os.path.join(fp, 'metago/virsorter.py')
     ctx.obj['OUTPUT'] = output
     ctx.obj['FLUX'] = flux
     ctx.obj['ACCOUNT'] = account
@@ -254,6 +255,21 @@ def sample_pseudoalign(ctx, sample_fp, reference):
                                                                       sample_fp,
                                                                       reference)
     submit(ctx=ctx, cmd=cmd)
+
+
+@cli.command()
+@click.argument('fasta_fp')
+@click.pass_context
+def virsorter(ctx, fasta_fp):
+    """ Viral sequence prediction of contigs """
+    cmd = 'source {} && python {} -o {} -p {} -m {} virsorter {}'.format(ctx.obj['ENVIRONMENT'],
+                                                                         ctx.obj['VIRSORTERSCRIPT'],
+                                                                         ctx.obj['OUTPUT'],
+                                                                         ctx.obj['PPN'],
+                                                                         ctx.obj['MEM'],
+                                                                         fasta_fp)
+    submit(ctx=ctx, cmd=cmd)
+
 
 if __name__ == "__main__":
     cli(obj={})
