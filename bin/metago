@@ -261,7 +261,7 @@ def sample_pseudoalign(ctx, sample_fp, reference):
 @cli.command()
 @click.argument('fasta_fp')
 @click.pass_context
-def virsorter(ctx, fasta_fp):
+def virsorter_decontaminate(ctx, fasta_fp):
     """ Viral sequence prediction of contigs """
     cmd = 'source {} && python {} -o {} -p {} -m {} virsorter {}'.format(ctx.obj['ENVIRONMENT'],
                                                                          ctx.obj['VIRSORTERSCRIPT'],
