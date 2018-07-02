@@ -30,7 +30,7 @@ conda install -c conda-forge conda-execute
 # install pyflow for automated task management
 pip install https://github.com/Illumina/pyflow/releases/download/v1.1.17/pyflow-1.1.17.tar.gz
 
-# Virsorter Install https://github.com/simroux/VirSorter
+# Virsorter Install https://github.com/simroux/VirSorter plus dependencies
 wget https://zenodo.org/record/1168727/files/virsorter-data-v2.tar.gz
 tar -xvzf virsorter-data-v2.tar.gz -C dependencies/
 rm virsorter-data-v2.tar.gz
@@ -42,8 +42,11 @@ rm mga_x86_64.tar.gz
 git clone https://github.com/simroux/VirSorter.git
 mv VirSorter dependencies/
 cd dependencies/VirSorter/Scripts && make && cd ../../../
-ln -s dependencies/VirSorter/wrapper_phage_contigs_sorter_iPlant.pl dependencies/miniconda/bin
-ln -s dependencies/VirSorter/Scripts dependencies/miniconda/bin
+cd dependencies/miniconda/bin
+ln -s ../../VirSorter/wrapper_phage_contigs_sorter_iPlant.pl .
+ln -s ../../VirSorter/Scripts .
+
+conda install -c bioconda mcl=14.137 muscle blast perl-bioperl perl-file-which hmmer=3.1b2 perl-parallel-forkmanager perl-list-moreutils diamond=0.9.14
 
 # install VirHostMatcher
 git clone https://github.com/jessieren/VirHostMatcher.git

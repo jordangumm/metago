@@ -40,6 +40,7 @@ def cli(ctx, output, ppn, mem):
     ctx.obj['MEM'] = mem
 
 
+@cli.command()
 @click.pass_context
 @click.argument('fasta_fp')
 def virsorter(ctx, fasta_fp):
@@ -51,7 +52,7 @@ def virsorter(ctx, fasta_fp):
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/minhash_{}'.format(r))
 
-    runner = VirSorter(fasta=fastq_fp, output_dp=ctx.obj['OUTPUT'], max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
+    runner = VirSorter(fasta=fasta_fp, output_dp=ctx.obj['OUTPUT'], max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
     runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
 
 
