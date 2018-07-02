@@ -46,8 +46,9 @@ def submit(ctx, cmd):
 @click.option('--ppn', '-p', default=4)
 @click.option('--mem', '-m', default='20000') # current limitation, only handles mb
 @click.option('--walltime', '-w', default='2:00:00')
+@click.option('--queue', '-q', default='fluxod')
 @click.pass_context
-def cli(ctx, output, flux, account, ppn, mem, walltime):
+def cli(ctx, output, flux, account, ppn, mem, walltime, queue):
     """ Metago Command Line Interface
 
     Note: Use absolute paths to all files and directories
@@ -69,8 +70,12 @@ def cli(ctx, output, flux, account, ppn, mem, walltime):
         cmd[metago_index] = metago_fp
         cmd.remove('--flux')
         cmd = ' '.join(cmd)
-        qsub = 'qsub -N metaGO -A {} -q fluxod -l nodes=1:ppn={}:largemem,mem={}mb,walltime={}'.format(
+        if queue == 'fluxod':
+            qsub = 'qsub -N metaGO -A {} -q fluxod -l nodes=1:ppn={}:largemem,mem={}mb,walltime={}'.format(
                                                                    account, ppn, mem, walltime)
+        else:
+            qsub = 'qsub -N metaGO -A {} -q {} -l nodes=1:ppn={},mem={}mb,walltime={}'.format(
+                                                                   account, queue, ppn, mem, walltime)
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
         sys.exit('Launched command via Flux')
     ctx.obj['ENVIRONMENT'] = environment
