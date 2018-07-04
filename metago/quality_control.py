@@ -78,7 +78,7 @@ class SampleQualityControl(FluxWorkflowRunner):
                 # Step 1. Interleave files to set up for next steps
                 interleaved_fp = os.path.join(sample_output_dp, 'interleaved', '{}.fastq'.format(pair))
                 if not os.path.exists(interleaved_fp):
-                    cmd = 'source {} && reformat.sh t=4'.format(conda)
+                    cmd = 'source {} && reformat.sh tossbrokenreads=t t=4'.format(conda)
                     cmd += ' in1={} in2={} out={}'.format(pairs[pair]['r1'], pairs[pair]['r2'], interleaved_fp)
                     self.addTask("interleave_{}".format(pair), nCores=4, memMb=pair_size, command=cmd)
                     pair_tasks.append("interleave_{}".format(pair))
