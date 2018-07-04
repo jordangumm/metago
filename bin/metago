@@ -56,6 +56,10 @@ def cli(ctx, output, flux, account, ppn, mem, walltime, queue):
     if not os.path.exists(output): os.makedirs(output)
     fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
     environment = os.path.join(fp, 'dependencies/miniconda/bin/activate')
+
+    subcommand = ctx.invoked_subcommand
+    if not subcommand:
+        subcommand = 'metago'
      
     if flux:
         if not account: sys.exit('To attempt a submission to the flux cluster you need to supply an --account/-a')
@@ -71,11 +75,11 @@ def cli(ctx, output, flux, account, ppn, mem, walltime, queue):
         cmd.remove('--flux')
         cmd = ' '.join(cmd)
         if queue == 'fluxod':
-            qsub = 'qsub -N metaGO -A {} -q fluxod -l nodes=1:ppn={}:largemem,mem={}mb,walltime={}'.format(
-                                                                   account, ppn, mem, walltime)
+            qsub = 'qsub -N {} -A {} -q fluxod -l nodes=1:ppn={}:largemem,mem={}mb,walltime={}'.format(
+                                                                   subcommand, account, ppn, mem, walltime)
         else:
-            qsub = 'qsub -N metaGO -A {} -q {} -l nodes=1:ppn={},mem={}mb,walltime={}'.format(
-                                                                   account, queue, ppn, mem, walltime)
+            qsub = 'qsub -N {} -A {} -q {} -l nodes=1:ppn={},mem={}mb,walltime={}'.format(
+                                                                   subcommand, account, queue, ppn, mem, walltime)
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
         sys.exit('Launched command via Flux')
     ctx.obj['ENVIRONMENT'] = environment
