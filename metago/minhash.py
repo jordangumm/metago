@@ -30,13 +30,11 @@ class SampleCompute(FluxWorkflowRunner):
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
 
         output_fp = '{}.sig'.format(os.path.join(self.output_dp, self.fastq.split('/')[-1].split('.')[0]))
-
-        scheduled_tasks = []
-        cmd = 'source {} && source activate py3 && sourmash compute {} --scaled {} -k {} -o {}'.format(
+        if not os.path.exists(output_fp):
+            cmd = 'source {} && source activate py3 && sourmash compute {} --scaled {} -k {} -o {}'.format(
                                             conda, self.fastq, self.num_hashes, self.kmer_length, output_fp)
-        print 'cmd: {}'.format(cmd)
-        self.addTask("compute", nCores=1, memMb=1000, command=cmd)
-        scheduled_tasks.append("compute")
+            print 'cmd: {}'.format(cmd)
+            self.addTask("compute", nCores=1, memMb=1000, command=cmd)
 
 
 class RunMinHash(FluxWorkflowRunner):
@@ -77,13 +75,23 @@ class RunMinHash(FluxWorkflowRunner):
             scheduled_jobs.append(sample)
 
         compare_fp = os.path.join(self.output_dp, 'sourmash_compare')
-        cmd = 'source {} && source activate py3 && cd {} && sourmash compare *.sig -o {}'.format(
+        if not os.path.exists(compare_fp):
+            cmd = 'source {} && source activate py3 && cd {} && sourmash compare *.sig -o {}'.format(
                                                                           conda, signatures_dp, compare_fp)
-        self.addTask('compare', nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=scheduled_jobs)
-        scheduled_jobs.append('compare')
+            self.addTask('compare', nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=scheduled_jobs)
+            scheduled_jobs.append('compare')
 
-        plot_fp = os.path.join(self.output_dp, 'sourmash_plot')
-        cmd = 'source {} && source activate py3 && sourmash plot {} -o {}'.format(conda, compare_fp, plot_fp)
+
+        compare_csv_fp = os.path.join(self.output_dp, 'sourmash_compare.csv')
+        if not os.path.exists(compare_fp):
+            cmd = 'source {} && source activate py3 && cd {} && sourmash compare *.sig --csv {}'.format(
+                                                                          conda, signatures_dp, compare_csv_fp)
+            self.addTask('compare_csv', nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=scheduled_jobs)
+            scheduled_jobs.append('compare_csv')
+        
+
+        plot_dp = os.path.join(self.output_dp, 'sourmash_plot')
+        cmd = 'source {} && source activate py3 && cd {} && sourmash plot {}'.format(conda, plot_dp, compare_fp)
         self.addTask('plot', nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=scheduled_jobs)
 
 
