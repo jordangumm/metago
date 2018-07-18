@@ -76,7 +76,7 @@ class RunPseudoalignment(FluxWorkflowRunner):
                 break
             sample_runner = SamplePseudoalignment(fastq=sample_fastq,
                                                   reference=self.reference,
-                                                  output=sample_dp,
+                                                  output=self.output,
                                                   max_ppn=self.max_ppn,
                                                   max_mem=self.max_mem)
             self.addWorkflowTask(label=sample, workflowRunnerInstance=sample_runner)
