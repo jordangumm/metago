@@ -68,10 +68,13 @@ class SampleQualityControl(FluxWorkflowRunner):
             for pair in pairs.keys():
                 pair_tasks = []
 
-                pair_size = (os.path.getsize(pairs[pair]['r1']) >> 20) * 2 # in MB, both pairs
+                r1_size = (os.path.getsize(pairs[pair]['r1']) >> 20) # in MB, forward strands
+                r2_size = (os.path.getsize(pairs[pair]['r2']) >> 20) # in MB, reverse strands
+                pair_size = r1_size + r2_size
                 if pair_size > self.max_mem:
-                    sys.exit('{}MB is not enough memory to interleave {}MB pair'.format(self.max_mem, pair_size))
-                if pair_size == 0: continue # bad sample
+                    sys.exit('{}MB is not enough memory to interleave {}MB pairs'.format(self.max_mem, pair_size+))
+                if r1_size < r2_size-1000 or r2_size < r1_size-1000: continue # fastq files have more than 1GB difference
+                if r1_size == 0 or r2_size == 0: continue # bad sample
 
                 # Step 1. Correct any 
 
