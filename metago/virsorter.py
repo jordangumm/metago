@@ -50,7 +50,7 @@ def virsorter(ctx, fasta_fp):
     fasta_fp -- file path to contig file path to be used for viral sorting
     """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-    log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/minhash_{}'.format(r))
+    log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/virsorter_{}'.format(r))
 
     runner = VirSorter(fasta=fasta_fp, output_dp=ctx.obj['OUTPUT'], max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
     runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
