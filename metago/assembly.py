@@ -49,9 +49,10 @@ class SampleAssembly(FluxWorkflowRunner):
 
         assembly_dp = os.path.join(sample_output_dp, 'assembly')
         if not os.path.exists(assembly_dp):
-            cmd = 'source {} && megahit --12 {} -t {} -o {}'.format(conda, normalized_fp, self.max_ppn, assembly_dp)
+            cmd = 'source {} && megahit --preset meta-sensitive --12 {} -t {} -o {}'.format(conda, normalized_fp, self.max_ppn, assembly_dp)
             print 'cmd: {}'.format(cmd)
-            self.addTask('assemble_{}'.format(self.sid), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
+            self.addTask('assemble_{}'.format(self.sid), nCores=self.max_ppn, memMb=self.max_mem,
+                         command=cmd, dependencies=scheduled_tasks)
             scheduled_tasks.append('assemble_{}'.format(self.sid))
 
 
