@@ -80,6 +80,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime, queue):
         else:
             qsub = 'qsub -N {} -A {} -q {} -l nodes=1:ppn={},mem={}mb,walltime={}'.format(
                                                                    subcommand, account, queue, ppn, mem, walltime)
+        print qsub
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
         sys.exit('Launched command via Flux')
     ctx.obj['ENVIRONMENT'] = environment
@@ -157,6 +158,22 @@ def run_assembly(ctx, run_dp):
 
 
 @cli.command()
+@click.option('--fastqs', '-f', multiple=True)
+@click.pass_context
+def co_assembly(ctx, fastqs):
+    """ Assemble run sample reads """
+    cmd = 'source {} && python {} -o {} -p {} -m {} co_assembly'.format(ctx.obj['ENVIRONMENT'],
+                                                                               ctx.obj['ASSEMBLYSCRIPT'],
+                                                                               ctx.obj['OUTPUT'],
+                                                                               ctx.obj['PPN'],
+                                                                               ctx.obj['MEM'])
+    for fastq in fastqs:
+        cmd += ' -f {}'.format(fastq)
+    submit(ctx=ctx, cmd=cmd)
+
+
+
+@cli.command()
 @click.argument('contig_fp')
 @click.argument('read_fp')
 @click.pass_context
@@ -205,8 +222,9 @@ def run_minhash(ctx, run_dp, num_hashes, kmer_length):
 @cli.command()
 @click.argument('run_dp')
 @click.option('--reference', '-r', required=True)
+@click.option('--visualize/--not-visualize', default=False)
 @click.pass_context
-def run_mapping(ctx, run_dp, reference):
+def run_mapping(ctx, run_dp, reference, visualize):
     """ Read mapping of run to reference """
     cmd = 'source {} && python {} -o {} -p {} -m {} run_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
@@ -215,14 +233,16 @@ def run_mapping(ctx, run_dp, reference):
                                                                       ctx.obj['MEM'],
                                                                       run_dp,
                                                                       reference)
+    if visualize: cmd += ' --visualize'
     submit(ctx=ctx, cmd=cmd)
 
 
 @cli.command()
 @click.argument('sample_fp')
 @click.option('--reference', '-r', required=True)
+@click.option('--visualize/--not-visaulize', default=False)
 @click.pass_context
-def sample_mapping(ctx, sample_fp, reference):
+def sample_mapping(ctx, sample_fp, reference, visualize):
     """ Read mapping of reference to sample """
     cmd = 'source {} && python {} -o {} -p {} -m {} sample_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
@@ -231,6 +251,7 @@ def sample_mapping(ctx, sample_fp, reference):
                                                                       ctx.obj['MEM'],
                                                                       sample_fp,
                                                                       reference)
+    if visualize: cmd += ' --visualize'
     submit(ctx=ctx, cmd=cmd)
 
 

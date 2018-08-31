@@ -38,22 +38,11 @@ class SampleAssembly(FluxWorkflowRunner):
         sample_output_dp = os.path.join(self.output_dp, self.sid)
         if not os.path.exists(sample_output_dp): os.makedirs(sample_output_dp)
 
-        scheduled_tasks = []
-        normalized_fp = os.path.join(sample_output_dp, 'normalized', '{}.fastq'.format(self.sid))
-        if not os.path.exists(normalized_fp):
-            cmd = 'source {} && bbnorm.sh -Xmx{}m t={}'.format(conda, self.max_mem-2000, self.max_ppn-1)
-            cmd += ' in={} out={} target=100 min=5'.format(self.fastq, normalized_fp)
-            print 'cmd: {}'.format(cmd)
-            self.addTask("normalize_{}".format(self.sid), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
-            scheduled_tasks.append("normalize_{}".format(self.sid))
-
         assembly_dp = os.path.join(sample_output_dp, 'assembly')
         if not os.path.exists(assembly_dp):
-            cmd = 'source {} && megahit --preset meta-sensitive --12 {} -t {} -o {}'.format(conda, normalized_fp, self.max_ppn, assembly_dp)
+            cmd = 'source {} && megahit --preset meta-sensitive --12 {} -t {} -o {}'.format(conda, self.fastq, self.max_ppn, assembly_dp)
             print 'cmd: {}'.format(cmd)
-            self.addTask('assemble_{}'.format(self.sid), nCores=self.max_ppn, memMb=self.max_mem,
-                         command=cmd, dependencies=scheduled_tasks)
-            scheduled_tasks.append('assemble_{}'.format(self.sid))
+            self.addTask('assemble_{}'.format(self.sid), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
 
 
 class RunSampleAssembly(FluxWorkflowRunner):
@@ -93,6 +82,24 @@ def cli(ctx, output, ppn, mem):
     ctx.obj['OUTPUT'] = output
     ctx.obj['PPN'] = ppn
     ctx.obj['MEM'] = mem
+
+
+@cli.command()
+@click.option('--fastqs', '-f', multiple=True)
+@click.pass_context
+def co_assembly(ctx, fastqs):
+    r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_assembly_{}'.format(r))
+
+    if len(fastqs) < 2:
+        sys.exit('[ERROR]: Not enough fastq files entered')
+    fastqs = ','.join(fastqs)
+
+    runner = SampleAssembly(sid='co_assembly', fastq=fastqs, output_dp=ctx.obj['OUTPUT'],
+                                          max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
+    runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
+    
+    
 
 
 @cli.command()
