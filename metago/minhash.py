@@ -109,11 +109,14 @@ def cli(ctx, output, ppn, mem):
 
 @cli.command()
 @click.argument('run_dp')
-@click.option('--num_hashes', '-s', default=10000)
+@click.option('--num_hashes', '-s', default=1000)
 @click.option('--kmer_length', '-k', default=31, help='minhash kmer length to use (default=31, recommended for genus level)')
 @click.pass_context
 def run_minhash(ctx, run_dp, num_hashes, kmer_length):
     """ Run assembly subworkflow manager
+
+    Recommended number of hashes is --scaled 1000, which is the default here.
+    http://sourmash.readthedocs.io/en/latest/using-sourmash-a-guide.html#what-resolution-should-my-signatures-be-how-should-i-compute-them
 
     Arguments:
     run_dp -- String path to run directory to use for analysis
