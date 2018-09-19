@@ -57,6 +57,7 @@ class SampleQualityControl(FluxWorkflowRunner):
         if len(pairs) == 0:
             print("No pairs found: is the post-QC output?")
             return
+        print pairs
         fp = os.path.dirname(os.path.abspath(__file__))
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
         adapters = os.path.join(fp, '../dependencies/adapters.fa')
@@ -73,11 +74,13 @@ class SampleQualityControl(FluxWorkflowRunner):
                 pair_size = r1_size + r2_size
                 if pair_size > self.max_mem:
                     sys.exit('{}MB is not enough memory to interleave {}MB pairs'.format(self.max_mem, pair_size))
-                if r1_size < r2_size-1000 or r2_size < r1_size-1000: continue # fastq files have more than 1GB difference
-                if r1_size == 0 or r2_size == 0: continue # bad sample
+                rsizediff = abs(r2_size-r1_size)
+                if rsizediff > r2_size*0.10 or rsizediff > r1_size*0.10:
+                    sys.exit('[ERROR]: fastq pair difference > 10% of fastq in pair')
+                if r1_size == 0 or r2_size == 0:
+                    sys.exit('[ERROR]: fastq in pair is BLANK')
 
-                # Step 1. Correct any 
-
+                # Step 0. Correct any issues? -- so far issues have been from not-completely-downloaded fastq files 
                 # Step 1. Interleave files to set up for next steps
                 interleaved_fp = os.path.join(sample_output_dp, 'interleaved', '{}.fastq'.format(pair))
                 if not os.path.exists(interleaved_fp):
@@ -100,7 +103,7 @@ class SampleQualityControl(FluxWorkflowRunner):
 
         merged_fp = os.path.join(sample_output_dp, '{}.fastq'.format(self.sid))
         if not os.path.exists(merged_fp):
-            cmd = 'source {} && cat {}/* > {}'.format(conda, os.path.dirname(os.path.abspath(trimmed_fp)), merged_fp)
+            cmd = 'source {} && cat {}/* > {}'.format(conda, os.path.join(sample_output_dp, 'quality_controlled'), merged_fp)
             self.addTask("join_{}".format(pair), nCores=1, memMb=2000, command=cmd, dependencies=scheduled_tasks)
             scheduled_tasks.append("join_{}".format(pair))
 
@@ -159,7 +162,7 @@ def run_qc(ctx, run_dp):
 @click.argument('sample_dp')
 @click.pass_context
 def sample_qc(ctx, sample_dp):
-    sid = sample_dp.split('/')[-1]
+    sid = sample_dp.rstrip('/').split('/')[-1]
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], sid, 'qc_{}'.format(r))
 
