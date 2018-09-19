@@ -10,9 +10,10 @@ from subprocess import call
 
 class SampleReadPileup(FluxWorkflowRunner):
     """ Coordinates sample read mapping and pileup visualization creation """
-    def __init__(self, fastq, reference, output, max_ppn, max_mem):
+    def __init__(self, fastq, reference, visualize, output, max_ppn, max_mem):
         self.fastq = fastq
         self.reference = reference
+        self.visualize = visualize
         self.output = output
         self.max_ppn = max_ppn
         self.max_mem = max_mem
@@ -48,9 +49,10 @@ class SampleReadPileup(FluxWorkflowRunner):
             self.addTask('samindex', nCores=1, memMb=768, command=cmd, dependencies=submitted_cmds)
             submitted_cmds.append('samindex')
 
-        cmd = 'source {} && '.format(env)
-        cmd += 'pyleup visualize {} -o {}'.format(bam_fp, output_dp) 
-        self.addTask('pileup', nCores=1, memMb=768, command=cmd, dependencies=submitted_cmds)
+        if self.visualize:
+            cmd = 'source {} && '.format(env)
+            cmd += 'pyleup visualize {} -o {}'.format(bam_fp, output_dp) 
+            self.addTask('pileup', nCores=1, memMb=768, command=cmd, dependencies=submitted_cmds)
         
 
 
@@ -59,9 +61,10 @@ class RunReadPileup(FluxWorkflowRunner):
     
     Assumes samples have already been processed by quality control step.
     """
-    def __init__(self, run_dp, reference, output, max_ppn, max_mem):
+    def __init__(self, run_dp, reference, visualize, output, max_ppn, max_mem):
         self.run_dp = run_dp
         self.reference = reference
+        self.visualize = visualize
         self.output = output
         self.max_ppn = max_ppn
         self.max_mem = max_mem
@@ -77,6 +80,7 @@ class RunReadPileup(FluxWorkflowRunner):
                 break
             sample_runner = SampleReadPileup(fastq=sample_fastq,
                                              reference=self.reference,
+                                             visualize=self.visualize,
                                              output=sample_dp,
                                              max_ppn=self.max_ppn,
                                              max_mem=self.max_mem)
@@ -97,13 +101,15 @@ def cli(ctx, output, ppn, mem):
 @cli.command()
 @click.argument('run_dp')
 @click.option('--reference', '-r', required=True)
+@click.option('--visualize/--not-visualize', default=False)
 @click.pass_context
-def run_pileup(ctx, run_dp, reference):
+def run_pileup(ctx, run_dp, reference, visualize):
     """ Coordinate mapping of reads from run samples to reference and visualize """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/run_pileup_{}'.format(r))
     runner = RunReadPileup(run_dp=run_dp,
                            reference=reference,
+                           visualize=visualize,
                            output=ctx.obj['OUTPUT'],
                            max_ppn=ctx.obj['PPN'],
                            max_mem=ctx.obj['MEM'])
@@ -115,14 +121,16 @@ def run_pileup(ctx, run_dp, reference):
 @cli.command()
 @click.argument('sample_fp')
 @click.option('--reference', '-r', required=True)
+@click.option('--visualize/--not-visualize', default=False)
 @click.pass_context
-def sample_pileup(ctx, sample_fp, reference):
+def sample_pileup(ctx, sample_fp, reference, visualize):
     """ Map reads from sample fastqs/fastas to reference and visualize """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_pileup_{}'.format(r))
 
     runner = SampleReadPileup(fastq=sample_fp,
                            reference=reference,
+                           visualize=visualize,
                            output=ctx.obj['OUTPUT'],
                            max_ppn=ctx.obj['PPN'],
                            max_mem=ctx.obj['MEM'])

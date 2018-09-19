@@ -60,7 +60,7 @@ class RunMinHash(FluxWorkflowRunner):
             if not os.path.isdir(sample_dp) or not 'Sample_' in sample: continue
             sample_fastq = ''
             for fastq in os.listdir(sample_dp):
-                if 'fastq' not in fastq: continue
+                if not fastq.endswith('.fastq'): continue
                 fastq_fp = os.path.join(sample_dp, fastq)
                 sample_fastq = fastq_fp
                 break # this file should be a single interleaved and quality controlled fastq

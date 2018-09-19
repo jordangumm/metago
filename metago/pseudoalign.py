@@ -47,7 +47,7 @@ class SamplePseudoalignment(FluxWorkflowRunner):
         sam_fp = os.path.join(output_dp, '{}.sam'.format(self.reference.split('/')[-1].split('.')[0]))        
         if not os.path.exists(sam_fp):
             cmd = 'source {} && '.format(env) 
-            cmd += 'kallisto quant -i {} -o {} --single-overhang --fr-stranded {} {} -t {}'.format(kallisto_index, output_dp,
+            cmd += 'kallisto quant -i {} -o {} -b 40 --bias --single-overhang --fr-stranded {} {} -t {}'.format(kallisto_index, output_dp,
                                                  deinterleaved_r1_fp, deinterleaved_r2_fp, self.max_ppn)
             self.addTask('kallisto', nCores=self.max_ppn, memMb=self.max_mem, command=cmd, dependencies=submitted_cmds)
             submitted_cmds.append('kallisto')

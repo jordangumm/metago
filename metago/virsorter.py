@@ -22,7 +22,7 @@ class VirSorter(FluxWorkflowRunner):
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
         data_dir = os.path.join(fp, '../dependencies/virsorter-data')
 
-        cmd = 'source {} && wrapper_phage_contigs_sorter_iPlant.pl --no_c --virome -f {} --db 1 --wdir {} --ncpu {} --data-dir {}'.format(
+        cmd = 'source {} && wrapper_phage_contigs_sorter_iPlant.pl --no_c --diamond --virome --fna {} --db 1 --wdir {} --ncpu {} --data-dir {}'.format(
                                                                  conda, self.fasta, self.output_dp, self.max_ppn, data_dir)
         print 'cmd: {}'.format(cmd)
         self.addTask('virsorter', nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
