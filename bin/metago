@@ -42,13 +42,14 @@ def submit(ctx, cmd):
 @click.group()
 @click.option('--output', '-o', default='metago_output')
 @click.option('--flux/--no-flux', default=False)
-@click.option('--account', '-a')
+@click.option('--account', '-a', help='ex. username_fluxod')
 @click.option('--ppn', '-p', default=4)
-@click.option('--mem', '-m', default='20000') # current limitation, only handles mb
-@click.option('--walltime', '-w', default='2:00:00')
+@click.option('--mem', '-m', default='20000', help='current limitation, only handles mb')
+@click.option('--walltime', '-w', default='2:00:00', help='must be in format hhh:mm:ss')
 @click.option('--queue', '-q', default='fluxod')
+@click.option('--email', '-e', default=None)
 @click.pass_context
-def cli(ctx, output, flux, account, ppn, mem, walltime, queue):
+def cli(ctx, output, flux, account, ppn, mem, walltime, queue, email):
     """ Metago Command Line Interface
 
     Note: Use absolute paths to all files and directories
@@ -80,6 +81,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime, queue):
         else:
             qsub = 'qsub -N {} -A {} -q {} -l nodes=1:ppn={},mem={}mb,walltime={}'.format(
                                                                    subcommand, account, queue, ppn, mem, walltime)
+        if email: qsub += ' -M {}'.format(email)
         print qsub
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
         sys.exit('Launched command via Flux')
@@ -131,6 +133,7 @@ def run_qc(ctx, run_dp):
 
 @cli.command()
 @click.argument('sample_dp')
+@click.option('--continue_assembly/--no_continue_assembly', default=False)
 @click.pass_context
 def sample_assembly(ctx, sample_dp):
     """ Assembly sample reads """
@@ -140,6 +143,7 @@ def sample_assembly(ctx, sample_dp):
                                                                                ctx.obj['PPN'],
                                                                                ctx.obj['MEM'],
                                                                                sample_dp)
+    if continue_assembly: cmd += ' --continue_assembly'
     submit(ctx=ctx, cmd=cmd)
 
 
@@ -159,14 +163,16 @@ def run_assembly(ctx, run_dp):
 
 @cli.command()
 @click.option('--fastqs', '-f', multiple=True)
+@click.option('--continue_assembly/--no_continue_assembly', default=False)
 @click.pass_context
-def co_assembly(ctx, fastqs):
+def co_assembly(ctx, fastqs, continue_assembly):
     """ Assemble run sample reads """
     cmd = 'source {} && python {} -o {} -p {} -m {} co_assembly'.format(ctx.obj['ENVIRONMENT'],
                                                                                ctx.obj['ASSEMBLYSCRIPT'],
                                                                                ctx.obj['OUTPUT'],
                                                                                ctx.obj['PPN'],
                                                                                ctx.obj['MEM'])
+    if continue_assembly: cmd += ' --continue_assembly'
     for fastq in fastqs:
         cmd += ' -f {}'.format(fastq)
     submit(ctx=ctx, cmd=cmd)

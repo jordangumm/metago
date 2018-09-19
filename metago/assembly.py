@@ -18,13 +18,15 @@ class SampleAssembly(FluxWorkflowRunner):
 
     https://github.com/voutcn/megahit/wiki/Assembly-Tips
     """
-    def __init__(self, sid, fastq, output_dp, max_ppn, max_mem):
+    def __init__(self, sid, fastq, output_dp, max_ppn, max_mem, continue_assembly=False):
         self.sid = sid
         self.fastq = fastq
         self.output_dp = output_dp
 
         self.max_ppn = int(max_ppn)
         self.max_mem = int(max_mem)
+
+        self.continue_assembly = continue_assembly
 
 
     def workflow(self):
@@ -41,6 +43,11 @@ class SampleAssembly(FluxWorkflowRunner):
         assembly_dp = os.path.join(sample_output_dp, 'assembly')
         if not os.path.exists(assembly_dp):
             cmd = 'source {} && megahit --preset meta-sensitive --12 {} -t {} -o {}'.format(conda, self.fastq, self.max_ppn, assembly_dp)
+            print 'cmd: {}'.format(cmd)
+            self.addTask('assemble_{}'.format(self.sid), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
+        elif self.continue_assembly:
+            cmd = 'source {} && megahit --preset meta-sensitive --12 {} -t {} -o {} --continue'.format(
+                                                                     conda, self.fastq, self.max_ppn, assembly_dp)
             print 'cmd: {}'.format(cmd)
             self.addTask('assemble_{}'.format(self.sid), nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
 
@@ -86,8 +93,9 @@ def cli(ctx, output, ppn, mem):
 
 @cli.command()
 @click.option('--fastqs', '-f', multiple=True)
+@click.option('--continue_assembly/--no_continue_assembly', default=False)
 @click.pass_context
-def co_assembly(ctx, fastqs):
+def co_assembly(ctx, fastqs, continue_assembly):
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_assembly_{}'.format(r))
 
@@ -96,7 +104,7 @@ def co_assembly(ctx, fastqs):
     fastqs = ','.join(fastqs)
 
     runner = SampleAssembly(sid='co_assembly', fastq=fastqs, output_dp=ctx.obj['OUTPUT'],
-                                          max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
+                        max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'], continue_assembly=continue_assembly)
     runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
     
     
@@ -104,8 +112,9 @@ def co_assembly(ctx, fastqs):
 
 @cli.command()
 @click.argument('sample_dp')
+@click.option('--continue_assembly/--no_continue_assembly', default=False)
 @click.pass_context
-def sample_assembly(ctx, sample_dp):
+def sample_assembly(ctx, sample_dp, continue_assembly):
     """ Sample assembly subworkflow manager """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_assembly_{}'.format(r))
@@ -120,7 +129,7 @@ def sample_assembly(ctx, sample_dp):
         break # this file should be a single interleaved and quality controlled fastq
 
     runner = SampleAssembly(sid=sid, fastq=sample_fastq, output_dp=ctx.obj['OUTPUT'],
-                            max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
+                            max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'], continue_assembly=continue_assembly)
     runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM']) 
 
 
