@@ -82,10 +82,11 @@ class RunReadPileup(FluxWorkflowRunner):
                 if '.fastq' not in fastq and not '.fa' in fastq: continue
                 sample_fastq = os.path.join(sample_dp, fastq)
                 break
+            sample_output = os.path.join(self.output, sample)
             sample_runner = SampleReadPileup(fastq=sample_fastq,
                                              reference=self.reference,
                                              visualize=self.visualize,
-                                             output=self.output,
+                                             output=sample_output,
                                              max_ppn=self.max_ppn,
                                              max_mem=self.max_mem,
                                              paired=self.paired)
