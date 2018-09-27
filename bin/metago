@@ -268,8 +268,9 @@ def sample_mapping(ctx, sample_fp, reference, visualize, paired):
 @cli.command()
 @click.argument('run_dp')
 @click.option('--reference', '-r', required=True)
+@click.option('--paired/--not-paired', default=False)
 @click.pass_context
-def run_pseudoalign(ctx, run_dp, reference):
+def run_pseudoalign(ctx, run_dp, reference, paired):
     """ Read assignment of run to reference """
     click.echo('Run Mapping called')
     cmd = 'source {} && python {} -o {} -p {} -m {} run_pseudoalign {} -r {}'.format(ctx.obj['ENVIRONMENT'],
@@ -279,14 +280,16 @@ def run_pseudoalign(ctx, run_dp, reference):
                                                                       ctx.obj['MEM'],
                                                                       run_dp,
                                                                       reference)
+    if paired: cmd += ' --paired'
     submit(ctx=ctx, cmd=cmd)
 
 
 @cli.command()
 @click.argument('sample_fp')
 @click.option('--reference', '-r', required=True)
+@click.option('--paired/--not-paired', default=False)
 @click.pass_context
-def sample_pseudoalign(ctx, sample_fp, reference):
+def sample_pseudoalign(ctx, sample_fp, reference, paired):
     """ Read assignment of sample to reference """
     cmd = 'source {} && python {} -o {} -p {} -m {} sample_pseudoalign {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['PSEUDOALIGNSCRIPT'],
@@ -295,6 +298,7 @@ def sample_pseudoalign(ctx, sample_fp, reference):
                                                                       ctx.obj['MEM'],
                                                                       sample_fp,
                                                                       reference)
+    if paired: cmd += ' --paired'
     submit(ctx=ctx, cmd=cmd)
 
 

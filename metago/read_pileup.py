@@ -31,7 +31,7 @@ class SampleReadPileup(FluxWorkflowRunner):
         if not os.path.exists(sam_fp):
             cmd = 'source {} && '.format(env) 
             cmd += 'bbmap.sh in={} ref={} t={} outm={}'.format(self.fastq, self.reference, self.max_ppn, sam_fp)
-            if not paired:
+            if not self.paired:
                 cmd += ' interleaved=f'
             self.addTask('bbmap', nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
             submitted_cmds.append('bbmap')
@@ -85,7 +85,7 @@ class RunReadPileup(FluxWorkflowRunner):
             sample_runner = SampleReadPileup(fastq=sample_fastq,
                                              reference=self.reference,
                                              visualize=self.visualize,
-                                             output=sample_dp,
+                                             output=self.output,
                                              max_ppn=self.max_ppn,
                                              max_mem=self.max_mem,
                                              paired=self.paired)
