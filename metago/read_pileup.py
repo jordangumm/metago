@@ -10,13 +10,14 @@ from subprocess import call
 
 class SampleReadPileup(FluxWorkflowRunner):
     """ Coordinates sample read mapping and pileup visualization creation """
-    def __init__(self, fastq, reference, visualize, output, max_ppn, max_mem):
+    def __init__(self, fastq, reference, visualize, output, max_ppn, max_mem, paired):
         self.fastq = fastq
         self.reference = reference
         self.visualize = visualize
         self.output = output
         self.max_ppn = max_ppn
         self.max_mem = max_mem
+        self.paired = paired
 
     def workflow(self):
         fp = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +31,8 @@ class SampleReadPileup(FluxWorkflowRunner):
         if not os.path.exists(sam_fp):
             cmd = 'source {} && '.format(env) 
             cmd += 'bbmap.sh in={} ref={} t={} outm={}'.format(self.fastq, self.reference, self.max_ppn, sam_fp)
+            if not paired:
+                cmd += ' interleaved=f'
             self.addTask('bbmap', nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
             submitted_cmds.append('bbmap')
 
@@ -61,13 +64,14 @@ class RunReadPileup(FluxWorkflowRunner):
     
     Assumes samples have already been processed by quality control step.
     """
-    def __init__(self, run_dp, reference, visualize, output, max_ppn, max_mem):
+    def __init__(self, run_dp, reference, visualize, output, max_ppn, max_mem, paired):
         self.run_dp = run_dp
         self.reference = reference
         self.visualize = visualize
         self.output = output
         self.max_ppn = max_ppn
         self.max_mem = max_mem
+        self.paired = paired
 
     def workflow(self):
         for sample in os.listdir(self.run_dp):
@@ -83,7 +87,8 @@ class RunReadPileup(FluxWorkflowRunner):
                                              visualize=self.visualize,
                                              output=sample_dp,
                                              max_ppn=self.max_ppn,
-                                             max_mem=self.max_mem)
+                                             max_mem=self.max_mem,
+                                             paired=self.paired)
             self.addWorkflowTask(label=sample, workflowRunnerInstance=sample_runner)
 
 @click.group()
@@ -102,8 +107,9 @@ def cli(ctx, output, ppn, mem):
 @click.argument('run_dp')
 @click.option('--reference', '-r', required=True)
 @click.option('--visualize/--not-visualize', default=False)
+@click.option('--paired/--not-paired', default=False)
 @click.pass_context
-def run_pileup(ctx, run_dp, reference, visualize):
+def run_pileup(ctx, run_dp, reference, visualize, paired):
     """ Coordinate mapping of reads from run samples to reference and visualize """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/run_pileup_{}'.format(r))
@@ -112,7 +118,8 @@ def run_pileup(ctx, run_dp, reference, visualize):
                            visualize=visualize,
                            output=ctx.obj['OUTPUT'],
                            max_ppn=ctx.obj['PPN'],
-                           max_mem=ctx.obj['MEM'])
+                           max_mem=ctx.obj['MEM'],
+                           paired=paired)
     return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
     if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
     return return_code
@@ -122,8 +129,9 @@ def run_pileup(ctx, run_dp, reference, visualize):
 @click.argument('sample_fp')
 @click.option('--reference', '-r', required=True)
 @click.option('--visualize/--not-visualize', default=False)
+@click.option('--paired/--not-paired', default=False)
 @click.pass_context
-def sample_pileup(ctx, sample_fp, reference, visualize):
+def sample_pileup(ctx, sample_fp, reference, visualize, paired):
     """ Map reads from sample fastqs/fastas to reference and visualize """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_pileup_{}'.format(r))
@@ -133,7 +141,8 @@ def sample_pileup(ctx, sample_fp, reference, visualize):
                            visualize=visualize,
                            output=ctx.obj['OUTPUT'],
                            max_ppn=ctx.obj['PPN'],
-                           max_mem=ctx.obj['MEM'])
+                           max_mem=ctx.obj['MEM'],
+                           paired=paired)
     return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
     if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
     return return_code
@@ -142,8 +151,9 @@ def sample_pileup(ctx, sample_fp, reference, visualize):
 @cli.command()
 @click.argument('read_fp')
 @click.option('--reference', '-r', required=True)
+@click.option('--paired/--not-paired', default=False)
 @click.pass_context
-def read_pileup(ctx, read_fp, reference):
+def read_pileup(ctx, read_fp, reference, paired):
     """ Map reads from fastq/fasta to reference and visualize """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_pileup_{}'.format(r))
@@ -152,7 +162,8 @@ def read_pileup(ctx, read_fp, reference):
                            reference=reference,
                            output=ctx.obj['OUTPUT'],
                            max_ppn=ctx.obj['PPN'],
-                           max_mem=ctx.obj['MEM'])
+                           max_mem=ctx.obj['MEM'],
+                           paired=paired)
     return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
     if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
     return return_code

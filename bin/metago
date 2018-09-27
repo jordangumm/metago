@@ -229,8 +229,9 @@ def run_minhash(ctx, run_dp, num_hashes, kmer_length):
 @click.argument('run_dp')
 @click.option('--reference', '-r', required=True)
 @click.option('--visualize/--not-visualize', default=False)
+@click.option('--paired/--not-paired', default=False)
 @click.pass_context
-def run_mapping(ctx, run_dp, reference, visualize):
+def run_mapping(ctx, run_dp, reference, visualize, paired):
     """ Read mapping of run to reference """
     cmd = 'source {} && python {} -o {} -p {} -m {} run_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
@@ -240,6 +241,7 @@ def run_mapping(ctx, run_dp, reference, visualize):
                                                                       run_dp,
                                                                       reference)
     if visualize: cmd += ' --visualize'
+    if paired: cmd += ' --paired'
     submit(ctx=ctx, cmd=cmd)
 
 
@@ -247,8 +249,9 @@ def run_mapping(ctx, run_dp, reference, visualize):
 @click.argument('sample_fp')
 @click.option('--reference', '-r', required=True)
 @click.option('--visualize/--not-visaulize', default=False)
+@click.option('--paired/--not-paired', default=False)
 @click.pass_context
-def sample_mapping(ctx, sample_fp, reference, visualize):
+def sample_mapping(ctx, sample_fp, reference, visualize, paired):
     """ Read mapping of reference to sample """
     cmd = 'source {} && python {} -o {} -p {} -m {} sample_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
                                                                       ctx.obj['MAPSCRIPT'],
@@ -258,6 +261,7 @@ def sample_mapping(ctx, sample_fp, reference, visualize):
                                                                       sample_fp,
                                                                       reference)
     if visualize: cmd += ' --visualize'
+    if paired: cmd += ' --paired'
     submit(ctx=ctx, cmd=cmd)
 
 
