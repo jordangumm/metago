@@ -10,7 +10,7 @@ A CLI that aims to automate common metagenome pipeline steps, with a subsequent 
 2. Assembly: [MegaHit](https://academic.oup.com/bioinformatics/article/31/10/1674/177884)
 3. Binning: [Maxbin 2.0](http://sourceforge.net/projects/maxbin/)
 4. Gene Calling: [Prodigal](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-119) | [EMIRGE (ribosomal reconstruction)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2011-12-5-r44)
-5. Viral Analysis: [VirSorter](https://peerj.com/articles/985/?utm_source=TrendMD&utm_campaign=PeerJ_TrendMD_0&utm_medium=TrendMD) | [VirHostMatcher](https://academic.oup.com/nar/article/45/1/39/2605663)
+5. Viral Analysis: [VirSorter](https://peerj.com/articles/985/?utm_source=TrendMD&utm_campaign=PeerJ_TrendMD_0&utm_medium=TrendMD)
 6. Annotation: [Prokka](https://academic.oup.com/bioinformatics/article/30/14/2068/2390517)
 
 ## Resources
@@ -18,6 +18,7 @@ A CLI that aims to automate common metagenome pipeline steps, with a subsequent 
 1. Micro-Phage Interaction Database: [MVP](http://mvp.medgenius.info/home)
 
 # Setup
+The following steps assume you have a python and pip install.  If you don't and potentially are using a server with unprivileged access, you may want to consider a user install of Anaconda.  Some rationale and steps to do this [can be found here](https://github.com/DuhaimeLab/Virus_Knowledgebase/wiki/Flux-Helper#personal-environment) in the Personal Environment section.
 
 ## Github Install
 ```
