@@ -7,6 +7,8 @@ import click
 from pyflux import FluxWorkflowRunner
 from subprocess import call
 
+import logging
+
 class SampleQualityControl(FluxWorkflowRunner):
     """ Follows JGI Data Preprocessing Guide
 
@@ -73,12 +75,15 @@ class SampleQualityControl(FluxWorkflowRunner):
                 r2_size = (os.path.getsize(pairs[pair]['r2']) >> 20) # in MB, reverse strands
                 pair_size = r1_size + r2_size
                 if pair_size > self.max_mem:
-                    sys.exit('{}MB is not enough memory to interleave {}MB pairs'.format(self.max_mem, pair_size))
+                    logging.warning('Possible failure ahead; low memory supplied for handling {}MB fastq pair'.format(pair_size))
                 rsizediff = abs(r2_size-r1_size)
                 if rsizediff > r2_size*0.10 or rsizediff > r1_size*0.10:
-                    sys.exit('[ERROR]: fastq pair difference > 10% of fastq in pair')
-                if r1_size == 0 or r2_size == 0:
-                    sys.exit('[ERROR]: {} or {} in pair is TINY or BLANK'.format(pairs[pair]['r1'], pairs[pair]['r2']))
+                    logging.warning('Possible issue with pair; {} greater than 10% different in size'.format(pair))
+                if r1_size == 0:
+                    logging.warning('Possible failed sequencing; {} is less than 1MB in size'.format(pairs[pair]['r1']))
+                if r2_size == 0:
+                    logging.warning('Possible failed sequencing; {} is less than 1MB in size'.format(pairs[pair]['r2']))
+                if pair_size == 0: pair_size = 1
 
                 # Step 0. Correct any issues? -- so far issues have been from not-completely-downloaded fastq files 
                 # Step 1. Interleave files to set up for next steps
@@ -141,6 +146,7 @@ def cli(ctx, output, ppn, mem):
     ctx.obj['OUTPUT'] = output
     ctx.obj['PPN'] = ppn
     ctx.obj['MEM'] = mem
+    logging.basicConfig(filename=os.path.join(output, 'error.log'))
 
 
 @cli.command()
