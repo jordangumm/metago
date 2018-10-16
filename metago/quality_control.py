@@ -78,7 +78,7 @@ class SampleQualityControl(FluxWorkflowRunner):
                 if rsizediff > r2_size*0.10 or rsizediff > r1_size*0.10:
                     sys.exit('[ERROR]: fastq pair difference > 10% of fastq in pair')
                 if r1_size == 0 or r2_size == 0:
-                    sys.exit('[ERROR]: fastq in pair is BLANK')
+                    sys.exit('[ERROR]: {} or {} in pair is TINY or BLANK'.format(pairs[pair]['r1'], pairs[pair]['r2']))
 
                 # Step 0. Correct any issues? -- so far issues have been from not-completely-downloaded fastq files 
                 # Step 1. Interleave files to set up for next steps
