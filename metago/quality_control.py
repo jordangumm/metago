@@ -89,17 +89,18 @@ class SampleQualityControl(FluxWorkflowRunner):
                 # Step 1. Interleave files to set up for next steps
                 interleaved_fp = os.path.join(sample_output_dp, 'interleaved', '{}.fastq'.format(pair))
                 if not os.path.exists(interleaved_fp):
-                    cmd = 'source {} && reformat.sh tossbrokenreads=t t=4'.format(conda)
+                    cmd = 'source {} && reformat.sh -Xmx{}m tossbrokenreads=t t=4'.format(conda, pair_size*2)
                     cmd += ' in1={} in2={} out={}'.format(fastqs[pair]['r1'], fastqs[pair]['r2'], interleaved_fp)
-                    self.addTask("interleave_{}".format(pair), nCores=4, memMb=pair_size, command=cmd)
+                    self.addTask("interleave_{}".format(pair), nCores=4, memMb=pair_size*2, command=cmd)
                     pair_tasks.append("interleave_{}".format(pair))
 
                 # Step 2. Quality control by trimming adapters and low quality bases for mapping
                 trimmed_fp = os.path.join(sample_output_dp, 'quality_controlled', '{}.fastq'.format(pair))
+                stats_fp = os.path.join(sample_output_dp, 'quality_controlled', 'stats.txt')
                 if not os.path.exists(trimmed_fp):
-                    cmd = 'source {} && bbduk.sh in={} out={} ref={}'.format(conda, interleaved_fp, trimmed_fp, adapters)
+                    cmd = 'source {} && bbduk.sh -Xmx{}m in={} out={} ref={} stats={}'.format(conda, pair_size*2, interleaved_fp, trimmed_fp, adapters, stats_fp)
                     cmd += ' ktrim=r k=23 mink=11 hdist=1 tpe tbo t=4 qtrim=rl trimq=20 maq=20 interleaved=t minlen=70'
-                    self.addTask("trim_{}".format(pair), nCores=4, memMb=pair_size, command=cmd, dependencies=pair_tasks) 
+                    self.addTask("trim_{}".format(pair), nCores=4, memMb=pair_size*2, command=cmd, dependencies=pair_tasks) 
                     pair_tasks.append("trim_{}".format(pair))
                 scheduled_tasks += pair_tasks
 
@@ -116,10 +117,10 @@ class SampleQualityControl(FluxWorkflowRunner):
                 fastq_name = fastq.split('/')[-1].replace('.fastq','').replace('.gz','')
                 trimmed_fp = os.path.join(sample_output_dp, 'quality_controlled', '{}.fastq'.format(fastq_name))
                 if not os.path.exists(trimmed_fp):
-                    cmd = 'source {} && bbduk.sh in={} out={} ref={} t=4'.format(conda, fastq, trimmed_fp, adapters)
+                    cmd = 'source {} && bbduk.sh -Xmx{}m in={} out={} ref={} t=4'.format(conda, fastq_size*2, fastq, trimmed_fp, adapters)
                     #cmd += ' t=4 trimq=20 maq=20 minlen=70'
                     #cmd += ' ktrim=r k=23 mink=11 hdist=1 t=4 qtrim=rl trimq=20 maq=20 minlen=70'
-                    self.addTask("trim_{}".format(fastq_name), nCores=4, memMb=fastq_size, command=cmd)
+                    self.addTask("trim_{}".format(fastq_name), nCores=4, memMb=fastq_size*2, command=cmd)
                     scheduled_tasks.append("trim_{}".format(fastq_name))
 
         merged_fp = os.path.join(sample_output_dp, '{}.fastq'.format(self.sid))
