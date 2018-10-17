@@ -111,43 +111,32 @@ def co_assembly(ctx, fastqs, continue_assembly):
 
 
 @cli.command()
-@click.argument('sample_dp')
+@click.option('--sample', help='directory path to sample that has been quality controlled')
+@click.option('--run', help='directory path to run with samples that have been quality controlled')
 @click.option('--continue_assembly/--no_continue_assembly', default=False)
 @click.pass_context
-def sample_assembly(ctx, sample_dp, continue_assembly):
-    """ Sample assembly subworkflow manager """
+def assembly(ctx, sample, run, continue_assembly):
+    """ Assembly subworkflow manager """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_assembly_{}'.format(r))
 
-    sid = os.path.basename(sample_dp).replace('_Sample','')
+    if sample:
+        sid = os.path.basename(sample).replace('_Sample','')
 
-    sample_fastq = ''
-    for fastq in os.listdir(sample_dp):
-        if 'fastq' not in fastq: continue
-        fastq_fp = os.path.join(sample_dp, fastq)
-        sample_fastq = fastq_fp
-        break # this file should be a single interleaved and quality controlled fastq
+        sample_fastq = ''
+        for fastq in os.listdir(sample):
+            if 'fastq' not in fastq: continue
+            fastq_fp = os.path.join(sample, fastq)
+            sample_fastq = fastq_fp
+            break # this file should be a single interleaved and quality controlled fastq
 
-    runner = SampleAssembly(sid=sid, fastq=sample_fastq, output_dp=ctx.obj['OUTPUT'],
+        runner = SampleAssembly(sid=sid, fastq=sample_fastq, output_dp=ctx.obj['OUTPUT'],
                             max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'], continue_assembly=continue_assembly)
-    runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM']) 
-
-
-@cli.command()
-@click.argument('run_dp')
-@click.pass_context
-def run_assembly(ctx, run_dp):
-    """ Run assembly subworkflow manager
-
-    Arguments:
-    run_dp -- String path to run directory to use for analysis
-    """
-    r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-    log_output_dp = os.path.join(ctx.obj['OUTPUT'], 'logs/run_assembly_{}'.format(r))
-
-    runner = RunSampleAssembly(run_dp=run_dp, output_dp=ctx.obj['OUTPUT'],
+        runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM']) 
+    elif run:
+        runner = RunSampleAssembly(run_dp=run, output_dp=ctx.obj['OUTPUT'],
                                max_ppn=ctx.obj['PPN'], max_mem=ctx.obj['MEM'])
-    runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
+        runner.run(mode='local', dataDirRoot=log_output_dp, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
 
 
 if __name__ == "__main__":

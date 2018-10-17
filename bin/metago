@@ -12,6 +12,7 @@ try:
     from metago.pyflux import FluxWorkflowRunner
 
     from metago import quality_control
+    from metago import assembly
 except ImportError:
     print 'Loading virtual environment...'
     fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
@@ -104,50 +105,36 @@ def cli(ctx, output, flux, account, ppn, mem, walltime, queue, email):
 
 
 cli.add_command(quality_control.qc)
+cli.add_command(assembly.assembly)
+
 #@cli.command()
+#@click.argument('sample_dp')
+#@click.option('--continue_assembly/--no_continue_assembly', default=False)
 #@click.pass_context
-#def qc(ctx):
-#    """ Quality control of Illumina sample """
-#    click.echo('Sample QC called')
-#    cmd = 'source {} && python {} {}'.format(ctx.obj['ENV'], ctx.obj['QC'], ctx.obj['ARGS']) 
-#    print cmd
-    #cmd = 'source {} && python {} -o {} -p {} -m {} sample_qc {}'.format(ctx.obj['ENVIRONMENT'],
-    #                                                                  ctx.obj['QCSCRIPT'],
-    #                                                                  ctx.obj['OUTPUT'],
-    #                                                                  ctx.obj['PPN'],
-    #                                                                  ctx.obj['MEM'],
-    #                                                                  sample_dp)
-    #submit(ctx=ctx, cmd=cmd)
-
-
-@cli.command()
-@click.argument('sample_dp')
-@click.option('--continue_assembly/--no_continue_assembly', default=False)
-@click.pass_context
-def sample_assembly(ctx, sample_dp):
-    """ Assembly sample reads """
-    cmd = 'source {} && python {} -o {} -p {} -m {} sample_assembly {}'.format(ctx.obj['ENVIRONMENT'],
-                                                                               ctx.obj['ASSEMBLYSCRIPT'],
-                                                                               ctx.obj['OUTPUT'],
-                                                                               ctx.obj['PPN'],
-                                                                               ctx.obj['MEM'],
-                                                                               sample_dp)
-    if continue_assembly: cmd += ' --continue_assembly'
-    submit(ctx=ctx, cmd=cmd)
-
-
-@cli.command()
-@click.argument('run_dp')
-@click.pass_context
-def run_assembly(ctx, run_dp):
-    """ Assemble run sample reads """
-    cmd = 'source {} && python {} -o {} -p {} -m {} run_assembly {}'.format(ctx.obj['ENVIRONMENT'],
-                                                                               ctx.obj['ASSEMBLYSCRIPT'],
-                                                                               ctx.obj['OUTPUT'],
-                                                                               ctx.obj['PPN'],
-                                                                               ctx.obj['MEM'],
-                                                                               run_dp)
-    submit(ctx=ctx, cmd=cmd)
+#def sample_assembly(ctx, sample_dp):
+#    """ Assembly sample reads """
+#    cmd = 'source {} && python {} -o {} -p {} -m {} sample_assembly {}'.format(ctx.obj['ENVIRONMENT'],
+#                                                                               ctx.obj['ASSEMBLYSCRIPT'],
+#                                                                               ctx.obj['OUTPUT'],
+#                                                                               ctx.obj['PPN'],
+#                                                                               ctx.obj['MEM'],
+#                                                                               sample_dp)
+#    if continue_assembly: cmd += ' --continue_assembly'
+#    submit(ctx=ctx, cmd=cmd)
+#
+#
+#@cli.command()
+#@click.argument('run_dp')
+#@click.pass_context
+#def run_assembly(ctx, run_dp):
+#    """ Assemble run sample reads """
+#    cmd = 'source {} && python {} -o {} -p {} -m {} run_assembly {}'.format(ctx.obj['ENVIRONMENT'],
+#                                                                               ctx.obj['ASSEMBLYSCRIPT'],
+#                                                                               ctx.obj['OUTPUT'],
+#                                                                               ctx.obj['PPN'],
+#                                                                               ctx.obj['MEM'],
+#                                                                               run_dp)
+#    submit(ctx=ctx, cmd=cmd)
 
 
 @cli.command()
