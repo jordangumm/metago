@@ -14,6 +14,7 @@ try:
     from metago import quality_control
     from metago import assembly
     from metago import binning
+    from metago import virsorter
 except ImportError:
     print 'Loading virtual environment...'
     fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
@@ -108,6 +109,7 @@ def cli(ctx, output, flux, account, ppn, mem, walltime, queue, email):
 cli.add_command(quality_control.qc)
 cli.add_command(assembly.assembly)
 cli.add_command(binning.binning)
+cli.add_command(virsorter.virsorter)
 
 @cli.command()
 @click.option('--fastqs', '-f', multiple=True)
@@ -124,17 +126,6 @@ def co_assembly(ctx, fastqs, continue_assembly):
     for fastq in fastqs:
         cmd += ' -f {}'.format(fastq)
     submit(ctx=ctx, cmd=cmd)
-
-
-#@cli.command()
-#@click.argument('sample_dp')
-#@click.pass_context
-#def viral_sample_workflow(ctx, sample_dp):
-#    """ Run base viral workflow against run """
-#    click.echo('Base viral sample workflow called')
-#    result = ctx.invoke(sample_qc, sample_dp=sample_dp)
-#    print(result)
-#    result = ctx.invoke(sample_assembly, sample_dp=sample_dp)
 
 
 @cli.command()
@@ -233,19 +224,6 @@ def sample_pseudoalign(ctx, sample_fp, reference, paired):
     if paired: cmd += ' --paired'
     submit(ctx=ctx, cmd=cmd)
 
-
-@cli.command()
-@click.argument('fasta_fp')
-@click.pass_context
-def virsorter_decontaminate(ctx, fasta_fp):
-    """ Viral sequence prediction of contigs """
-    cmd = 'source {} && python {} -o {} -p {} -m {} virsorter {}'.format(ctx.obj['ENVIRONMENT'],
-                                                                         ctx.obj['VIRSORTERSCRIPT'],
-                                                                         ctx.obj['OUTPUT'],
-                                                                         ctx.obj['PPN'],
-                                                                         ctx.obj['MEM'],
-                                                                         fasta_fp)
-    submit(ctx=ctx, cmd=cmd)
 
 @cli.command()
 @click.argument('fastq_fp')
