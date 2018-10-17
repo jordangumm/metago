@@ -54,7 +54,7 @@ def cli(ctx, output, ppn, mem):
 @click.option('--read_fp', '-r', required=True, help='file path to read fasta/fastq file')
 @click.option('--min_contig_length', '-m', default=1500)
 @click.pass_context
-def sample_binning(ctx, contig_fp, read_fp, min_contig_length):
+def binning(ctx, contig_fp, read_fp, min_contig_length):
     sid = read_fp.split('/')[-1].split('.')[0]
 
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
