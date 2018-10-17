@@ -55,11 +55,11 @@ class SampleQualityControl(FluxWorkflowRunner):
         
         To consider: integrating memory estimation to dynamically set requirements
         """
-        pairs, is_paired = self.get_fastq_pairs(self.fastqs) # put in workflow instead of __init__ so print statements log
-        if len(pairs) == 0:
-            print("No pairs found: is the post-QC output?")
+        fastqs, is_paired = self.get_fastq_pairs(self.fastqs) # put in workflow instead of __init__ so print statements log
+        print fastqs
+        if len(fastqs) == 0:
+            print("No fastq found: is the post-QC output?")
             return
-        print pairs
         fp = os.path.dirname(os.path.abspath(__file__))
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
         adapters = os.path.join(fp, '../dependencies/adapters.fa')
@@ -68,11 +68,11 @@ class SampleQualityControl(FluxWorkflowRunner):
 
         scheduled_tasks = []
         if is_paired:
-            for pair in pairs.keys():
+            for pair in fastqs.keys():
                 pair_tasks = []
 
-                r1_size = (os.path.getsize(pairs[pair]['r1']) >> 20) # in MB, forward strands
-                r2_size = (os.path.getsize(pairs[pair]['r2']) >> 20) # in MB, reverse strands
+                r1_size = (os.path.getsize(fastqs[pair]['r1']) >> 20) # in MB, forward strands
+                r2_size = (os.path.getsize(fastqs[pair]['r2']) >> 20) # in MB, reverse strands
                 pair_size = r1_size + r2_size
                 if pair_size > self.max_mem:
                     logging.warning('Possible failure ahead; low memory supplied for handling {}MB fastq pair'.format(pair_size))
@@ -80,9 +80,9 @@ class SampleQualityControl(FluxWorkflowRunner):
                 if rsizediff > r2_size*0.10 or rsizediff > r1_size*0.10:
                     logging.warning('Possible issue with pair; {} greater than 10% different in size'.format(pair))
                 if r1_size == 0:
-                    logging.warning('Possible failed sequencing; {} is less than 1MB in size'.format(pairs[pair]['r1']))
+                    logging.warning('Possible failed sequencing; {} is less than 1MB in size'.format(fastqs[pair]['r1']))
                 if r2_size == 0:
-                    logging.warning('Possible failed sequencing; {} is less than 1MB in size'.format(pairs[pair]['r2']))
+                    logging.warning('Possible failed sequencing; {} is less than 1MB in size'.format(fastqs[pair]['r2']))
                 if pair_size == 0: pair_size = 1
 
                 # Step 0. Correct any issues? -- so far issues have been from not-completely-downloaded fastq files 
@@ -90,7 +90,7 @@ class SampleQualityControl(FluxWorkflowRunner):
                 interleaved_fp = os.path.join(sample_output_dp, 'interleaved', '{}.fastq'.format(pair))
                 if not os.path.exists(interleaved_fp):
                     cmd = 'source {} && reformat.sh tossbrokenreads=t t=4'.format(conda)
-                    cmd += ' in1={} in2={} out={}'.format(pairs[pair]['r1'], pairs[pair]['r2'], interleaved_fp)
+                    cmd += ' in1={} in2={} out={}'.format(fastqs[pair]['r1'], fastqs[pair]['r2'], interleaved_fp)
                     self.addTask("interleave_{}".format(pair), nCores=4, memMb=pair_size, command=cmd)
                     pair_tasks.append("interleave_{}".format(pair))
 
@@ -104,13 +104,29 @@ class SampleQualityControl(FluxWorkflowRunner):
                 scheduled_tasks += pair_tasks
 
         else:
-            sys.exit('Not Implemented: single end QC')
+            for fastq in fastqs:
+                fastq_tasks = []
+                fastq_size = (os.path.getsize(fastq) >> 20) # in MB
+                if fastq_size > self.max_mem:
+                    logging.warning('Possible failure ahead; low memory supplied for handling {}MB fastq pair'.format(fastq_size))
+                if fastq_size == 0:
+                    logging.warning('Possible failed sequencing; {} is less than 1MB in size'.format(fastq))
+                    fastq_size = 1
+                # Step 1. Quality control by trimming adapters and low quality bases for mapping
+                fastq_name = fastq.split('/')[-1].replace('.fastq','').replace('.gz','')
+                trimmed_fp = os.path.join(sample_output_dp, 'quality_controlled', '{}.fastq'.format(fastq_name))
+                if not os.path.exists(trimmed_fp):
+                    cmd = 'source {} && bbduk.sh in={} out={} ref={} t=4'.format(conda, fastq, trimmed_fp, adapters)
+                    #cmd += ' t=4 trimq=20 maq=20 minlen=70'
+                    #cmd += ' ktrim=r k=23 mink=11 hdist=1 t=4 qtrim=rl trimq=20 maq=20 minlen=70'
+                    self.addTask("trim_{}".format(fastq_name), nCores=4, memMb=fastq_size, command=cmd)
+                    scheduled_tasks.append("trim_{}".format(fastq_name))
 
         merged_fp = os.path.join(sample_output_dp, '{}.fastq'.format(self.sid))
         if not os.path.exists(merged_fp):
             cmd = 'source {} && cat {}/* > {}'.format(conda, os.path.join(sample_output_dp, 'quality_controlled'), merged_fp)
-            self.addTask("join_{}".format(pair), nCores=1, memMb=2000, command=cmd, dependencies=scheduled_tasks)
-            scheduled_tasks.append("join_{}".format(pair))
+            self.addTask("join_fastq", nCores=1, memMb=2000, command=cmd, dependencies=scheduled_tasks)
+            scheduled_tasks.append("join_fastq")
 
 
 class RunQualityControl(FluxWorkflowRunner):
@@ -136,22 +152,6 @@ class RunQualityControl(FluxWorkflowRunner):
             self.addWorkflowTask(label=sample, workflowRunnerInstance=sample_qc_runner)
 
 
-@click.group()
-@click.option('--output', '-o', required=True)
-@click.option('--ppn', '-p', required=True)
-@click.option('--mem', '-m', required=True)
-@click.pass_context
-def cli(ctx, output, ppn, mem):
-    if not os.path.exists(output): os.makedirs(output)
-    ctx.obj['OUTPUT'] = output
-    ctx.obj['PPN'] = ppn
-    ctx.obj['MEM'] = mem
-    logging.basicConfig(filename=os.path.join(output, 'error.log'))
-
-
-@cli.command()
-@click.argument('run_dp')
-@click.pass_context
 def run_qc(ctx, run_dp):
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/run_qc_{}'.format(r))
@@ -164,9 +164,6 @@ def run_qc(ctx, run_dp):
     return return_code
 
 
-@cli.command()
-@click.argument('sample_dp')
-@click.pass_context
 def sample_qc(ctx, sample_dp):
     sid = sample_dp.rstrip('/').split('/')[-1]
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
@@ -189,5 +186,23 @@ def sample_qc(ctx, sample_dp):
     return return_code
 
 
-if __name__ == "__main__":
-    cli(obj={})
+@click.command()
+@click.option('--run', help='directory path to Illumina run containing sample directories')
+@click.option('--sample', help='directory path to Illumina sample containing fastq(s)')
+@click.option('--fastq', help='path(s) to single sample single-end fastq(s)', multiple=True)
+@click.option('--r1', help='comma seperated list of single sample forward strand fastq(s)')
+@click.option('--r2', help='comma seperated list of single sample reverse strand fastq(s)')
+@click.pass_context
+def qc(ctx, run, sample, fastq, r1, r2):
+    """ Quality control fastq file(s) """
+    logging.basicConfig(filename=os.path.join(ctx.obj['OUTPUT'], 'error.log'))
+
+    if not run and not sample and not fastq and not r1 and not r2:
+        logging.warning('No option supplied to specify fastq(s) for quality control!')
+        sys.exit('No option supplied to specify fastq(s) for quality control!')
+
+    if run: run_qc(ctx, run)
+    elif sample: sample_qc(ctx, sample)
+    elif fastq: sys.exit('Single end manually defined fastq method not implemented')
+    elif r1 or r2: sys.exit('Paired end manually defined fastq method not implemented')
+    else: sys.exit('Unexpected failure: debug')

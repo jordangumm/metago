@@ -10,8 +10,8 @@ from subprocess import call
 
 try:
     from metago.pyflux import FluxWorkflowRunner
-    from metago.quality_control import RunQualityControl
-    from metago.quality_control import SampleQualityControl
+
+    from metago import quality_control
 except ImportError:
     print 'Loading virtual environment...'
     fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
@@ -85,8 +85,9 @@ def cli(ctx, output, flux, account, ppn, mem, walltime, queue, email):
         print qsub
         call('echo "source {} && python {}" | {}'.format(environment, cmd, qsub), shell=True)
         sys.exit('Launched command via Flux')
-    ctx.obj['ENVIRONMENT'] = environment
-    ctx.obj['QCSCRIPT'] = os.path.join(fp, 'metago/quality_control.py')
+    ctx.obj['ARGS'] = ' '.join(sys.argv[1:])
+    ctx.obj['ENV'] = environment
+    ctx.obj['QC'] = os.path.join(fp, 'metago/quality_control.py')
     ctx.obj['ASSEMBLYSCRIPT'] = os.path.join(fp, 'metago/assembly.py')
     ctx.obj['BINNINGSCRIPT'] = os.path.join(fp, 'metago/binning.py')
     ctx.obj['MAPSCRIPT'] = os.path.join(fp, 'metago/read_pileup.py')
@@ -102,33 +103,21 @@ def cli(ctx, output, flux, account, ppn, mem, walltime, queue, email):
     ctx.obj['WALLTIME'] = walltime
 
 
-@cli.command()
-@click.argument('sample_dp')
-@click.pass_context
-def sample_qc(ctx, sample_dp):
-    """ Quality control of Illumina sample """
-    click.echo('Sample QC called')
-    cmd = 'source {} && python {} -o {} -p {} -m {} sample_qc {}'.format(ctx.obj['ENVIRONMENT'],
-                                                                      ctx.obj['QCSCRIPT'],
-                                                                      ctx.obj['OUTPUT'],
-                                                                      ctx.obj['PPN'],
-                                                                      ctx.obj['MEM'],
-                                                                      sample_dp)
-    submit(ctx=ctx, cmd=cmd)
-
-@cli.command()
-@click.argument('run_dp')
-@click.pass_context
-def run_qc(ctx, run_dp):
-    """ Quality control of Illumina run """
-    click.echo('Run QC called')
-    cmd = 'source {} && python {} -o {} -p {} -m {} run_qc {}'.format(ctx.obj['ENVIRONMENT'],
-                                                                      ctx.obj['QCSCRIPT'],
-                                                                      ctx.obj['OUTPUT'],
-                                                                      ctx.obj['PPN'],
-                                                                      ctx.obj['MEM'],
-                                                                      run_dp)
-    submit(ctx=ctx, cmd=cmd)
+cli.add_command(quality_control.qc)
+#@cli.command()
+#@click.pass_context
+#def qc(ctx):
+#    """ Quality control of Illumina sample """
+#    click.echo('Sample QC called')
+#    cmd = 'source {} && python {} {}'.format(ctx.obj['ENV'], ctx.obj['QC'], ctx.obj['ARGS']) 
+#    print cmd
+    #cmd = 'source {} && python {} -o {} -p {} -m {} sample_qc {}'.format(ctx.obj['ENVIRONMENT'],
+    #                                                                  ctx.obj['QCSCRIPT'],
+    #                                                                  ctx.obj['OUTPUT'],
+    #                                                                  ctx.obj['PPN'],
+    #                                                                  ctx.obj['MEM'],
+    #                                                                  sample_dp)
+    #submit(ctx=ctx, cmd=cmd)
 
 
 @cli.command()
