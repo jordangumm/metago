@@ -30,7 +30,7 @@ class SampleReadPileup(FluxWorkflowRunner):
         sam_fp = os.path.join(output_dp, '{}.sam'.format(self.reference.split('/')[-1].split('.')[0]))        
         if not os.path.exists(sam_fp):
             cmd = 'source {} && '.format(env) 
-            cmd += 'bbmap.sh in={} ref={} t={} outm={}'.format(self.fastq, self.reference, self.max_ppn, sam_fp)
+            cmd += 'bbmap.sh -Xmx{}m in={} ref={} t={} outm={}'.format(self.fastq, self.max_mem, self.reference, self.max_ppn, sam_fp)
             if not self.paired:
                 cmd += ' interleaved=f'
             self.addTask('bbmap', nCores=self.max_ppn, memMb=self.max_mem, command=cmd)
@@ -105,16 +105,27 @@ def cli(ctx, output, ppn, mem):
 
 
 @cli.command()
-@click.argument('run_dp')
+@click.option('--run', help='full path to ruin directory with quality controlled samples')
+@click.option('--sample', help='full path to fastq')
 @click.option('--reference', '-r', required=True)
 @click.option('--visualize/--not-visualize', default=False)
 @click.option('--paired/--not-paired', default=False)
 @click.pass_context
-def run_pileup(ctx, run_dp, reference, visualize, paired):
-    """ Coordinate mapping of reads from run samples to reference and visualize """
+def mapping(ctx, run, sample, reference, visualize, paired):
+    """ Coordinate mapping of reads to reference """
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-    log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/run_pileup_{}'.format(r))
-    runner = RunReadPileup(run_dp=run_dp,
+    log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/pileup_{}'.format(r))
+
+    if run:
+        runner = RunReadPileup(run_dp=run,
+                           reference=reference,
+                           visualize=visualize,
+                           output=ctx.obj['OUTPUT'],
+                           max_ppn=ctx.obj['PPN'],
+                           max_mem=ctx.obj['MEM'],
+                           paired=paired)
+    elif sample:
+        runner = SampleReadPileup(fastq=sample,
                            reference=reference,
                            visualize=visualize,
                            output=ctx.obj['OUTPUT'],
@@ -125,49 +136,6 @@ def run_pileup(ctx, run_dp, reference, visualize, paired):
     if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
     return return_code
 
-
-@cli.command()
-@click.argument('sample_fp')
-@click.option('--reference', '-r', required=True)
-@click.option('--visualize/--not-visualize', default=False)
-@click.option('--paired/--not-paired', default=False)
-@click.pass_context
-def sample_pileup(ctx, sample_fp, reference, visualize, paired):
-    """ Map reads from sample fastqs/fastas to reference and visualize """
-    r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-    log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_pileup_{}'.format(r))
-
-    runner = SampleReadPileup(fastq=sample_fp,
-                           reference=reference,
-                           visualize=visualize,
-                           output=ctx.obj['OUTPUT'],
-                           max_ppn=ctx.obj['PPN'],
-                           max_mem=ctx.obj['MEM'],
-                           paired=paired)
-    return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
-    if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
-    return return_code
-
-
-@cli.command()
-@click.argument('read_fp')
-@click.option('--reference', '-r', required=True)
-@click.option('--paired/--not-paired', default=False)
-@click.pass_context
-def read_pileup(ctx, read_fp, reference, paired):
-    """ Map reads from fastq/fasta to reference and visualize """
-    r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-    log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/sample_pileup_{}'.format(r))
-
-    runner = SampleReadPileup(fastq=read_fp,
-                           reference=reference,
-                           output=ctx.obj['OUTPUT'],
-                           max_ppn=ctx.obj['PPN'],
-                           max_mem=ctx.obj['MEM'],
-                           paired=paired)
-    return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
-    if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
-    return return_code
 
 if __name__ == "__main__":
     cli(obj={})

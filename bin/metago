@@ -15,6 +15,7 @@ try:
     from metago import assembly
     from metago import binning
     from metago import virsorter
+    from metago import mapping
 except ImportError:
     print 'Loading virtual environment...'
     fp = os.path.dirname(os.path.abspath(__file__)).replace('bin','')
@@ -110,6 +111,7 @@ cli.add_command(quality_control.qc)
 cli.add_command(assembly.assembly)
 cli.add_command(binning.binning)
 cli.add_command(virsorter.virsorter)
+cli.add_command(mapping.mapping)
 
 @cli.command()
 @click.option('--fastqs', '-f', multiple=True)
@@ -143,48 +145,6 @@ def run_minhash(ctx, run_dp, num_hashes, kmer_length):
                                                                            run_dp)
     if num_hashes: cmd += ' --num_hashes={}'.format(num_hashes)
     if kmer_length: cmd += ' --kmer_length={}'.format(kmer_length)
-    submit(ctx=ctx, cmd=cmd)
-
-
-
-
-@cli.command()
-@click.argument('run_dp')
-@click.option('--reference', '-r', required=True)
-@click.option('--visualize/--not-visualize', default=False)
-@click.option('--paired/--not-paired', default=False)
-@click.pass_context
-def run_mapping(ctx, run_dp, reference, visualize, paired):
-    """ Read mapping of run to reference """
-    cmd = 'source {} && python {} -o {} -p {} -m {} run_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
-                                                                      ctx.obj['MAPSCRIPT'],
-                                                                      ctx.obj['OUTPUT'],
-                                                                      ctx.obj['PPN'],
-                                                                      ctx.obj['MEM'],
-                                                                      run_dp,
-                                                                      reference)
-    if visualize: cmd += ' --visualize'
-    if paired: cmd += ' --paired'
-    submit(ctx=ctx, cmd=cmd)
-
-
-@cli.command()
-@click.argument('sample_fp')
-@click.option('--reference', '-r', required=True)
-@click.option('--visualize/--not-visaulize', default=False)
-@click.option('--paired/--not-paired', default=False)
-@click.pass_context
-def sample_mapping(ctx, sample_fp, reference, visualize, paired):
-    """ Read mapping of reference to sample """
-    cmd = 'source {} && python {} -o {} -p {} -m {} sample_pileup {} -r {}'.format(ctx.obj['ENVIRONMENT'],
-                                                                      ctx.obj['MAPSCRIPT'],
-                                                                      ctx.obj['OUTPUT'],
-                                                                      ctx.obj['PPN'],
-                                                                      ctx.obj['MEM'],
-                                                                      sample_fp,
-                                                                      reference)
-    if visualize: cmd += ' --visualize'
-    if paired: cmd += ' --paired'
     submit(ctx=ctx, cmd=cmd)
 
 
