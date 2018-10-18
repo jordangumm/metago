@@ -14,13 +14,14 @@ class SampleQualityControl(FluxWorkflowRunner):
 
     https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/data-preprocessing/
     """
-    def __init__(self, sid, fastqs, output_dp, max_ppn, max_mem):
+    def __init__(self, sid, fastqs, output_dp, max_ppn, max_mem, overwrite):
         self.sid = sid
         self.fastqs = fastqs
         self.output_dp = output_dp
 
         self.max_ppn = int(max_ppn)
         self.max_mem = int(max_mem)
+        self.overwrite = overwrite
 
     def get_fastq_pairs(self, fastqs):
         """ Return lists of fastq pairs
@@ -100,6 +101,7 @@ class SampleQualityControl(FluxWorkflowRunner):
                 if not os.path.exists(trimmed_fp):
                     cmd = 'source {} && bbduk.sh -Xmx{}m in={} out={} ref={} stats={}'.format(conda, pair_size*2, interleaved_fp, trimmed_fp, adapters, stats_fp)
                     cmd += ' ktrim=r k=23 mink=11 hdist=1 tpe tbo t=4 qtrim=rl trimq=20 maq=20 interleaved=t minlen=70'
+                    if self.overwrite: cmd += ' overwrite=t'
                     self.addTask("trim_{}".format(pair), nCores=4, memMb=pair_size*2, command=cmd, dependencies=pair_tasks) 
                     pair_tasks.append("trim_{}".format(pair))
                 scheduled_tasks += pair_tasks
@@ -118,6 +120,7 @@ class SampleQualityControl(FluxWorkflowRunner):
                 trimmed_fp = os.path.join(sample_output_dp, 'quality_controlled', '{}.fastq'.format(fastq_name))
                 if not os.path.exists(trimmed_fp):
                     cmd = 'source {} && bbduk.sh -Xmx{}m in={} out={} ref={} t=4'.format(conda, fastq_size*2, fastq, trimmed_fp, adapters)
+                    if self.overwrite: cmd += ' overwrite=t'
                     #cmd += ' t=4 trimq=20 maq=20 minlen=70'
                     #cmd += ' ktrim=r k=23 mink=11 hdist=1 t=4 qtrim=rl trimq=20 maq=20 minlen=70'
                     self.addTask("trim_{}".format(fastq_name), nCores=4, memMb=fastq_size*2, command=cmd)
@@ -131,12 +134,13 @@ class SampleQualityControl(FluxWorkflowRunner):
 
 
 class RunQualityControl(FluxWorkflowRunner):
-    def __init__(self, run_dp, output_dp, max_ppn, max_mem):
+    def __init__(self, run_dp, output_dp, max_ppn, max_mem, overwrite):
         self.run_dp = run_dp
         self.output_dp = output_dp
 
         self.max_ppn = max_ppn
         self.max_mem = max_mem
+        self.overwrite = overwrite
 
     def workflow(self):
         for sample in os.listdir(self.run_dp):
@@ -149,23 +153,24 @@ class RunQualityControl(FluxWorkflowRunner):
                 sample_fastqs.append(fastq_fp)
 
             sample_qc_runner = SampleQualityControl(sid=sample, fastqs=sample_fastqs, output_dp=self.output_dp,
-                                                                     max_ppn=self.max_ppn, max_mem=self.max_mem)
+                                           max_ppn=self.max_ppn, max_mem=self.max_mem, overwrite=self.overwrite)
             self.addWorkflowTask(label=sample, workflowRunnerInstance=sample_qc_runner)
 
 
-def run_qc(ctx, run_dp):
+def run_qc(ctx, run_dp, overwrite):
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], 'logs/run_qc_{}'.format(r))
     runner = RunQualityControl(run_dp=run_dp,
                                output_dp=ctx.obj['OUTPUT'],
                                max_ppn=ctx.obj['PPN'],
-                               max_mem=ctx.obj['MEM'])
+                               max_mem=ctx.obj['MEM'],
+                               overwrite=overwrite)
     return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
     if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
     return return_code
 
 
-def sample_qc(ctx, sample_dp):
+def sample_qc(ctx, sample_dp, overwrite):
     sid = sample_dp.rstrip('/').split('/')[-1]
     r = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     log_output = os.path.join(ctx.obj['OUTPUT'], sid, 'qc_{}'.format(r))
@@ -181,7 +186,8 @@ def sample_qc(ctx, sample_dp):
                                   fastqs=sample_fastqs,
                                   output_dp=ctx.obj['OUTPUT'],
                                   max_ppn=ctx.obj['PPN'],
-                                  max_mem=ctx.obj['MEM'])
+                                  max_mem=ctx.obj['MEM'],
+                                  overwrite=overwrite)
     return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
     if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
     return return_code
@@ -193,17 +199,26 @@ def sample_qc(ctx, sample_dp):
 @click.option('--fastq', help='path(s) to single sample single-end fastq(s)', multiple=True)
 @click.option('--r1', help='comma seperated list of single sample forward strand fastq(s)')
 @click.option('--r2', help='comma seperated list of single sample reverse strand fastq(s)')
+@click.option('--overwrite/--not-overwrite', help='force bbduk.sh to overwrite files if needed', default=False)
 @click.pass_context
-def qc(ctx, run, sample, fastq, r1, r2):
+def qc(ctx, run, sample, fastq, r1, r2, overwrite):
     """ Quality control fastq file(s) """
+    empty_output = True
+    if os.path.exists(ctx.obj['OUTPUT']):
+        if len(os.listdir(ctx.obj['OUTPUT'])) > 0:
+            empty_output = False
     logging.basicConfig(filename=os.path.join(ctx.obj['OUTPUT'], 'error.log'))
+    
+    if not empty_output and not overwrite:
+        logging.warning('bbduk.sh requires output to be fresh: double check and use --overwrite option if you want to force this run')
+        sys.exit('bbduk.sh requires output to be fresh: double check and use --overwrite option if you want to force this run')
 
     if not run and not sample and not fastq and not r1 and not r2:
         logging.warning('No option supplied to specify fastq(s) for quality control!')
         sys.exit('No option supplied to specify fastq(s) for quality control!')
 
-    if run: run_qc(ctx, run)
-    elif sample: sample_qc(ctx, sample)
+    if run: run_qc(ctx, run, overwrite)
+    elif sample: sample_qc(ctx, sample, overwrite)
     elif fastq: sys.exit('Single end manually defined fastq method not implemented')
     elif r1 or r2: sys.exit('Paired end manually defined fastq method not implemented')
     else: sys.exit('Unexpected failure: debug')
