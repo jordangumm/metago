@@ -65,7 +65,11 @@ class SampleQualityControl(FluxWorkflowRunner):
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
         adapters = os.path.join(fp, '../dependencies/adapters.fa')
         sample_output_dp = os.path.join(self.output_dp, self.sid)
-        if not os.path.exists(sample_output_dp): os.makedirs(sample_output_dp)
+        if not os.path.exists(sample_output_dp):
+            os.makedirs(sample_output_dp)
+        else:
+            logging.warning('bbduk.sh requires output to be fresh: force using --overwrite option')
+            sys.exit('bbduk.sh requires output to be fresh: force using --overwrite option')
 
         scheduled_tasks = []
         if is_paired:
@@ -208,8 +212,8 @@ def qc(ctx, run, sample, fastq, r1, r2, overwrite):
     logging.basicConfig(filename=os.path.join(ctx.obj['OUTPUT'], 'error.log'))
     
     if not empty_output and not overwrite:
-        logging.warning('bbduk.sh requires output to be fresh: double check and use --overwrite option if you want to force this run')
-        sys.exit('bbduk.sh requires output to be fresh: double check and use --overwrite option if you want to force this run')
+        logging.warning('bbduk.sh requires output to be fresh: force by using the --overwrite option')
+        sys.exit('bbduk.sh requires output to be fresh: force by using the --overwrite option')
 
     if not run and not sample and not fastq and not r1 and not r2:
         logging.warning('No option supplied to specify fastq(s) for quality control!')
