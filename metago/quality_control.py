@@ -68,7 +68,7 @@ class SampleQualityControl(FluxWorkflowRunner):
         if not os.path.exists(sample_output_dp):
             os.makedirs(sample_output_dp)
         else:
-            logging.warning('bbduk.sh requires output to be fresh: force using --overwrite option')
+            logging.warning('[ERROR]: bbduk.sh requires output to be fresh: force using --overwrite option')
             sys.exit('bbduk.sh requires output to be fresh: force using --overwrite option')
 
         scheduled_tasks = []
@@ -191,7 +191,9 @@ def sample_qc(ctx, sample_dp, overwrite):
                                   max_mem=ctx.obj['MEM'],
                                   overwrite=overwrite)
     return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
-    if return_code != 0: sys.exit('Non-Zero Exit Code in run_qc')
+    if return_code != 0:
+        logger.warning('[ERROR]: Non-Zero Exit Code in run_qc')
+        sys.exit('Non-Zero Exit Code in run_qc')
     return return_code
 
 
@@ -212,15 +214,21 @@ def qc(ctx, run, sample, fastq, r1, r2, overwrite):
     logging.basicConfig(filename=os.path.join(ctx.obj['OUTPUT'], 'error.log'))
     
     if not empty_output and not overwrite:
-        logging.warning('bbduk.sh requires output to be fresh: force by using the --overwrite option')
+        logging.warning('[ERROR]: bbduk.sh requires output to be fresh: force by using the --overwrite option')
         sys.exit('bbduk.sh requires output to be fresh: force by using the --overwrite option')
 
     if not run and not sample and not fastq and not r1 and not r2:
-        logging.warning('No option supplied to specify fastq(s) for quality control!')
+        logging.warning('[ERROR]: No option supplied to specify fastq(s) for quality control!')
         sys.exit('No option supplied to specify fastq(s) for quality control!')
 
     if run: run_qc(ctx, run, overwrite)
     elif sample: sample_qc(ctx, sample, overwrite)
-    elif fastq: sys.exit('Single end manually defined fastq method not implemented')
-    elif r1 or r2: sys.exit('Paired end manually defined fastq method not implemented')
-    else: sys.exit('Unexpected failure: debug')
+    elif fastq:
+        logging.warning('[ERROR]: Single end manually defined fastq method not implemented')
+        sys.exit('Single end manually defined fastq method not implemented')
+    elif r1 or r2:
+        logging.warning('[ERROR]: Paired end manually defined fastq method not implemented')
+        sys.exit('Paired end manually defined fastq method not implemented')
+    else:
+        logging.warning('[ERROR]: Unexpected failure: debug the logs!')
+        sys.exit('Unexpected failure: debug')
