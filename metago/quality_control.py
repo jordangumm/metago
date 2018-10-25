@@ -65,11 +65,9 @@ class SampleQualityControl(FluxWorkflowRunner):
         conda = os.path.join(fp, '../dependencies/miniconda/bin/activate')
         adapters = os.path.join(fp, '../dependencies/adapters.fa')
         sample_output_dp = os.path.join(self.output_dp, self.sid)
-        if not os.path.exists(sample_output_dp):
-            os.makedirs(sample_output_dp)
-        else:
-            logging.warning('[ERROR]: bbduk.sh requires output to be fresh: force using --overwrite option')
-            sys.exit('bbduk.sh requires output to be fresh: force using --overwrite option')
+        if os.path.exists(os.path.join(sample_output_dp, 'quality_controlled')) and not self.overwrite:
+            logging.warning('[ERROR]: bbduk.sh requires sample output {} to be fresh:\nforce using --overwrite option'.format(sample_output_dp))
+            sys.exit('bbduk.sh requires sample output {} to be fresh: force using --overwrite option'.format(sample_output_dp))
 
         scheduled_tasks = []
         if is_paired:
@@ -129,10 +127,9 @@ class SampleQualityControl(FluxWorkflowRunner):
                 scheduled_tasks.append("trim_{}".format(fastq_name))
 
         merged_fp = os.path.join(sample_output_dp, '{}.fastq'.format(self.sid))
-        if not os.path.exists(merged_fp):
-            cmd = 'source {} && cat {}/* > {}'.format(conda, os.path.join(sample_output_dp, 'quality_controlled'), merged_fp)
-            self.addTask("join_fastq", nCores=1, memMb=2000, command=cmd, dependencies=scheduled_tasks)
-            scheduled_tasks.append("join_fastq")
+        cmd = 'source {} && cat {}/* > {}'.format(conda, os.path.join(sample_output_dp, 'quality_controlled'), merged_fp)
+        self.addTask("join_fastq", nCores=1, memMb=2000, command=cmd, dependencies=scheduled_tasks)
+        scheduled_tasks.append("join_fastq")
 
 
 class RunQualityControl(FluxWorkflowRunner):
@@ -192,7 +189,7 @@ def sample_qc(ctx, sample_dp, overwrite):
                                   overwrite=overwrite)
     return_code = runner.run(mode='local', dataDirRoot=log_output, nCores=ctx.obj['PPN'], memMb=ctx.obj['MEM'])
     if return_code != 0:
-        logger.warning('[ERROR]: Non-Zero Exit Code in run_qc')
+        logging.warning('[ERROR]: Non-Zero Exit Code in run_qc')
         sys.exit('Non-Zero Exit Code in run_qc')
     return return_code
 
@@ -214,8 +211,8 @@ def qc(ctx, run, sample, fastq, r1, r2, overwrite):
     logging.basicConfig(filename=os.path.join(ctx.obj['OUTPUT'], 'error.log'))
     
     if not empty_output and not overwrite:
-        logging.warning('[ERROR]: bbduk.sh requires output to be fresh: force by using the --overwrite option')
-        sys.exit('bbduk.sh requires output to be fresh: force by using the --overwrite option')
+        logging.warning('[ERROR]: bbduk.sh requires {} to be fresh: force by using the --overwrite option'.format(ctx.obj['OUTPUT']))
+        sys.exit('bbduk.sh requires {} to be fresh: force by using the --overwrite option'.format(ctx.obj['OUTPUT']))
 
     if not run and not sample and not fastq and not r1 and not r2:
         logging.warning('[ERROR]: No option supplied to specify fastq(s) for quality control!')
